@@ -8,7 +8,7 @@ Makefile suggested for compiling and testing the project:
 run: build
 	clear ; ./test_static
 
-build: test_dynamic test_static clean
+build: clean test_dynamic test_static
 
 lbuild: libcguieng.so libcguieng.a
 
@@ -31,5 +31,5 @@ test: test.c
 	cc -g test.c -o $@
 
 clean:
-	rm -f *.a *.so *.o test_*
+	rm -f *.a *.so *.o test_* test
 ```
