@@ -1,7 +1,7 @@
 # ConsoleGUI
 Engine project for developing GUI-like and game console application.
 
-##Makefile
+## Makefile
 
 Makefile suggested for compiling and testing the project:
 ```Makefile
