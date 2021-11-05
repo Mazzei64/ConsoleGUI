@@ -1,3 +1,6 @@
+#debugging config
+.vscode/
+
 #environment
 Makefile
 test.c

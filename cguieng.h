@@ -11,7 +11,7 @@
 static int defaut_refresh = 15;
 #define REFRESH_RATE defaut_refresh
 #define SET_REFRESH_RATE(a)     if(a<0) {   \
-                            fprintf(stderr,"\nWARNING: Invalid refresh rate value. Can't be less than 0.\n");   \
+                            fprintf(stderr,"\nWARNING: Invalid refresh rate value. Can't be equal or less than 0.\n");   \
                             }                           \
                             defaut_refresh = a;
 
@@ -27,6 +27,7 @@ typedef struct SqrObject {
     int hight;
 } Object;
 
+extern int DestroyObject(Object** );
 extern Object* NewObject(int width, int hight);
 extern void Refresh();
 extern void SetObject(Object* );

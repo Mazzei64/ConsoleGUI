@@ -1,6 +1,18 @@
 #include <stdio.h>
 #include "cguieng.h"
 
+int DestroyObject(Object** object) {
+	if(*object == NULL)
+		return -1;
+	if((*object)->canva != NULL) {
+		free((*object)->canva);
+		(*object)->canva = NULL;
+	}
+	
+	free(*object);
+	*object = NULL;
+	return 0;
+}
 Object* NewObject(int width, int hight) {
 	if((width < 1 || hight < 1)
 	 	|| (width > WIDTH || hight > HIGHT))
