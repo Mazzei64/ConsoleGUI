@@ -1,5 +1,6 @@
-#include <stdio.h>
 #include "cguieng.h"
+
+char* displayBuffer;
 
 int DestroyObject(Object** object) {
 	if(*object == NULL)

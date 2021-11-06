@@ -5,30 +5,40 @@ Engine project for developing GUI-like and game console application.
 
 Makefile suggested for compiling and testing the project:
 ```Makefile
-run: build
+Drun: build
+	clear ; ./test_dynamic
+
+Srun: build
 	clear ; ./test_static
 
 build: clean test_dynamic test_static
 
+build_dynamic: clean test_dynamic
+
+build_static: clean test_static
+
 lbuild: libcguieng.so libcguieng.a
 
 test_static: test.c libcguieng.a
-	gcc -g $^ -o $@
+	clang -g $^ -o $@
 
 libcguieng.a: cguieng.o
 	ar -rcv $@ $^
 
 test_dynamic: test.c libcguieng.so
-	gcc test.c -L. -lcguieng -o $@
+	clang test.c -L. -lcguieng -o $@
 
 libcguieng.so: cguieng.o
-	gcc -shared -o $@ $^
+	clang -shared -o $@ $^
 
 cguieng.o: cguieng.h cguieng.c
-	gcc -c -fPIC cguieng.c -o $@
+	clang -c -fPIC cguieng.c -o $@
 
 test: test.c
-	cc -g test.c -o $@
+	clang -g test.c -o $@
+
+set_env:
+	LD_LIBRARY_PATH=./ ; export LD_LIBRARY_PATH
 
 clean:
 	rm -f *.a *.so *.o test_* test
