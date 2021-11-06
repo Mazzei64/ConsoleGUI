@@ -1,8 +1,0 @@
-#debugging config
-.vscode/
-
-#environment
-Makefile
-test.c
-test
-test.cool.stuff
