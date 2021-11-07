@@ -7,7 +7,6 @@ void DestroyAll();
 
 static Object** objectlist;
 static int objectlistCount = 0;
-static int objectlistContains = 0;
 
 char* displayBuffer;
 
@@ -42,7 +41,6 @@ Object* NewObject(int width, int hight) {
 	new_object->id = objectlistCount + 1;
 	objectlist[objectlistCount] = new_object;
 	objectlistCount++;
-	objectlistContains++;
 	AddToList(new_object);
 	return new_object;
 }
