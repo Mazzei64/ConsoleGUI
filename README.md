@@ -38,7 +38,7 @@ test: test.c
 	clang -g test.c -o $@
 
 set_env:
-	LD_LIBRARY_PATH=./ ; export LD_LIBRARY_PATH
+	LD_LIBRARY_PATH=../ConsoleGUI ; export LD_LIBRARY_PATH
 
 clean:
 	rm -f *.a *.so *.o test_* test

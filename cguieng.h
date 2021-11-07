@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 typedef struct SqrObject {
+    int id;
     char* canva;
     int posi_x;
     int posi_y;
@@ -20,6 +21,7 @@ extern void SetObject(Object* object);
 extern void UpdateDisplay();
 
 #define clrscr() printf("\e[1;1H\e[2J")
+#define MAX_OBJLIST_SIZE 256
 #define WIDTH 238
 #define HIGHT 60
 #define SCREEN_SIZE 238 * 60

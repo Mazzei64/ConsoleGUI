@@ -1,20 +1,36 @@
+#include<stdio.h>
 #include "cguieng.h"
+
+static void AddToList(Object* object);
+static void DefragmentList(int currentId);
+void DestroyAll();
+
+static Object** objectlist;
+static int objectlistCount = 0;
+static int objectlistContains = 0;
 
 char* displayBuffer;
 
 int DestroyObject(Object** object) {
+	int currentId = (*object)->id;
 	if(*object == NULL)
 		return -1;
+
 	if((*object)->canva != NULL) {
 		free((*object)->canva);
 		(*object)->canva = NULL;
 	}
-	
 	free(*object);
 	*object = NULL;
+
+	DefragmentList(currentId);
+
 	return 0;
 }
 Object* NewObject(int width, int hight) {
+	if(objectlist == NULL)
+		objectlist = (Object**)malloc(sizeof(Object*) * MAX_OBJLIST_SIZE);
+
 	if((width < 1 || hight < 1)
 	 	|| (width > WIDTH || hight > HIGHT))
 		 	return NULL;
@@ -23,6 +39,11 @@ Object* NewObject(int width, int hight) {
 	new_object->canva = (char*)malloc(sizeof(char) * width * hight);
 	new_object->width = width;
 	new_object->hight = hight;
+	new_object->id = objectlistCount + 1;
+	objectlist[objectlistCount] = new_object;
+	objectlistCount++;
+	objectlistContains++;
+	AddToList(new_object);
 	return new_object;
 }
 void Refresh() {
@@ -56,4 +77,32 @@ void UpdateDisplay() {
 		i++;
 	}
 	fflush(stdout);
+}
+void DestroyAll() {
+	if(displayBuffer == NULL)
+		return;
+	
+	for (size_t i = 0; i < objectlistCount; i++) {
+		free(objectlist[i]->canva);
+		objectlist[i]->canva = NULL;
+		free(objectlist[i]);
+		objectlist[i] = NULL;
+	}
+	
+}
+/*
+	Description: Auxiliary Functions Section
+*/
+static void AddToList(Object* object) {
+	objectlist[objectlistCount] = object;
+}
+static void DefragmentList(int currentId) {
+	for (size_t i = (currentId - 1); i < objectlistCount + 1; i++) {
+		objectlist[i] = objectlist[i+1];
+	}
+	objectlist[objectlistCount - 1] = 0x00;
+	objectlistCount--;
+	for (size_t i = (currentId - 1); i < objectlistCount; i++) {
+		objectlist[i]->id -= 1;
+	}	
 }
