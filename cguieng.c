@@ -1,5 +1,13 @@
-#include<stdio.h>
 #include "cguieng.h"
+
+typedef struct SqrObject {
+    short id;
+    char* canva;
+    short posi_x;
+    short posi_y;
+    short width;
+    short hight;
+} Object;
 
 static void AddToList(Object* object);
 static void DefragmentList(int currentId);
@@ -10,6 +18,18 @@ static int objectlistCount = 0;
 
 char* displayBuffer;
 
+void DestroyAll() {
+	if(displayBuffer == NULL || objectlistCount == 0)
+		return;
+	
+	for (size_t i = 0; i < objectlistCount; i++) {
+		free(objectlist[i]->canva);
+		objectlist[i]->canva = NULL;
+		free(objectlist[i]);
+		objectlist[i] = NULL;
+	}
+	
+}
 int DestroyObject(Object** object) {
 	int currentId = (*object)->id;
 	if(*object == NULL)
@@ -53,7 +73,7 @@ void SetObject(Object *object) {
 	if(displayBuffer == NULL) {
 		fprintf(stderr, "\nERROR: Display hasn't been created.\n");
 		fprintf(stderr, "Try creating it by using the cguieng's macro \"CREATE_DISPLAY_BUFFER\"\n");
-		return;
+		exit(1);
 	}
 
     int realY = object->posi_y * WIDTH,
@@ -75,18 +95,6 @@ void UpdateDisplay() {
 		i++;
 	}
 	fflush(stdout);
-}
-void DestroyAll() {
-	if(displayBuffer == NULL)
-		return;
-	
-	for (size_t i = 0; i < objectlistCount; i++) {
-		free(objectlist[i]->canva);
-		objectlist[i]->canva = NULL;
-		free(objectlist[i]);
-		objectlist[i] = NULL;
-	}
-	
 }
 /*
 	Description: Auxiliary Functions Section

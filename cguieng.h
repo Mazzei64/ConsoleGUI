@@ -13,28 +13,20 @@
 #define SCREEN_SIZE 238 * 60
 #define REFRESH_RATE defaut_refresh
 #define SET_REFRESH_RATE(a)     if(a<0) {   \
-                            fprintf(stderr,"\nWARNING: Invalid refresh rate value. Can't be equal or less than 0.\n");   \
+                            fprintf(stderr,"\nERROR: Invalid refresh rate value. Can't be equal or less than 0.\n");   \
+                            exit(1);                              \
                             }                           \
                             defaut_refresh = a;
 #define CREATE_DISPLAY_BUFFER displayBuffer	        \
 			 = (char*)malloc(sizeof(char) * WIDTH * HIGHT);
 
-typedef struct SqrObject {
-    int id;
-    char* canva;
-    int posi_x;
-    int posi_y;
-    int width;
-    int hight;
-} Object;
-
-extern byte displayBoundaries[];
 extern char* displayBuffer;
+extern struct SqrObject;
 
-extern int DestroyObject(Object** object);
-extern Object* NewObject(int width, int hight);
+extern int DestroyObject(struct SqrObject** object);
+extern struct SqrObject* NewObject(int width, int hight);
 extern void Refresh();
-extern void SetObject(Object* object);
+extern void SetObject(struct SqrObject* object);
 extern void UpdateDisplay();
 #define byte unsigned char
 
