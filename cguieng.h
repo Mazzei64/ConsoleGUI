@@ -27,11 +27,18 @@
                             exit(1);                              \
                             }                           \
                             defaut_refresh = a;
-#define CREATE_DISPLAY_BUFFER displayBuffer	        \
-			 = (char*)malloc(sizeof(char) * WIDTH * HIGHT);
+
+#define TURN_ON_DISPLAY   int main(int argc, char** argv) {       \
+                                    displayBuffer	        \
+			                            = (char*)malloc(sizeof(char) * WIDTH * HIGHT);      \
+                                    while(1) {                  \
+                                 
+
+#define TURN_OFF_DISPLAY             }           \
+                                return 0;  }
 
 extern char* displayBuffer;
-extern struct SqrObject;
+struct SqrObject;
 
 extern int DestroyObject(struct SqrObject** object);
 extern struct SqrObject* NewObject(int width, int hight);
