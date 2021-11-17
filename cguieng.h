@@ -17,6 +17,7 @@
 
 #define byte unsigned char
 #define clrscr() printf("\e[1;1H\e[2J")
+#define CURSOR_SWITCH printf("\e[?25l");
 #define MAX_OBJLIST_SIZE 256
 #define WIDTH 238
 #define HIGHT 60
@@ -28,7 +29,8 @@
                             }                           \
                             defaut_refresh = a;
 
-#define TURN_ON_DISPLAY   int main(int argc, char** argv) {
+#define TURN_ON_DISPLAY   int main(int argc, char** argv) {     \
+                            CURSOR_SWITCH
 #define __START                displayBuffer	        \
 			                            = (char*)malloc(sizeof(char) * WIDTH * HIGHT);      \
                                     while(1) {                  \
