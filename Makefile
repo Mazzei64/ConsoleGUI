@@ -34,4 +34,4 @@ set_env:
 	LD_LIBRARY_PATH=../ConsoleGUI ; export LD_LIBRARY_PATH
 
 clean:
-	rm -f *.a *.so *.o test_* test
+	rm -f *.a *.so *.o test*

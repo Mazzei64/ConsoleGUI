@@ -28,17 +28,23 @@
                             }                           \
                             defaut_refresh = a;
 
-#define TURN_ON_DISPLAY   int main(int argc, char** argv) {       \
-                                    displayBuffer	        \
+#define TURN_ON_DISPLAY   int main(int argc, char** argv) {
+#define __START                displayBuffer	        \
 			                            = (char*)malloc(sizeof(char) * WIDTH * HIGHT);      \
                                     while(1) {                  \
                                  
-
-#define TURN_OFF_DISPLAY             }           \
-                                return 0;  }
+#define __END                   }
+#define TURN_OFF_DISPLAY    return 0;  }
 
 extern char* displayBuffer;
-struct SqrObject;
+typedef struct SqrObject {
+    short id;
+    char* canva;
+    short posi_x;
+    short posi_y;
+    short width;
+    short hight;
+} Object;
 
 extern int DestroyObject(struct SqrObject** object);
 extern struct SqrObject* NewObject(int width, int hight);

@@ -1,14 +1,5 @@
 #include "cguieng.h"
 
-typedef struct SqrObject {
-    short id;
-    char* canva;
-    short posi_x;
-    short posi_y;
-    short width;
-    short hight;
-} Object;
-
 static void AddToList(Object* object);
 static void DefragmentList(int currentId);
 void DestroyAll();
@@ -79,13 +70,16 @@ void SetObject(Object *object) {
     int realY = object->posi_y * WIDTH,
 	        start = object->posi_x + realY;
 
+	int objectIndex = 0;
 	for (size_t i = 0; i < object->hight; i++) {
 		for (size_t j = 0; j < object->width; j++) {
-			displayBuffer[start + j] = object->canva[j * i];
+			displayBuffer[start + j] = object->canva[objectIndex];
+			objectIndex++;
 		}
 		start += WIDTH;
 	}
 }
+
 void UpdateDisplay() {
 	int i = 0;
 	clrscr();
