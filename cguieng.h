@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #define byte unsigned char
@@ -48,6 +49,7 @@ typedef struct SqrObject {
     short hight;
 } Object;
 
+extern char* AppendRight(Object* obj1, Object* obj2, int pad);
 extern int DestroyObject(struct SqrObject** object);
 extern struct SqrObject* NewObject(int width, int hight);
 extern void Refresh();

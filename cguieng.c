@@ -9,6 +9,33 @@ static int objectlistCount = 0;
 
 char* displayBuffer;
 
+char* AppendRight(Object* obj1, Object* obj2, int pad) {
+    int obj1count = 0, obj2count = 0, count = 0,
+    len = strlen(obj1->canva) + strlen(obj2->canva);
+
+    char* result = (char *)malloc(sizeof(char) * len);
+
+    while (count < len) {
+        result[count] = obj1->canva[obj1count];
+        count++; 
+        if((obj1count + 1) % obj1->width == 0 && count >= 4) {
+            for (size_t j = 0; j < obj2->width; j++) {
+                if(count == len) {
+                    count++;
+                    break;
+                }
+                result[count] = obj2->canva[obj2count];
+                obj2count++;
+                count++;
+            }
+            obj1count++;
+            continue;
+        }
+        obj1count++;
+    }
+    return result;
+}
+
 void DestroyAll() {
 	if(displayBuffer == NULL || objectlistCount == 0)
 		return;
