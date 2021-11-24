@@ -1,11 +1,11 @@
 /*  Project Name    :           ConsoleGUI Engine
-*   Version         :           1.0.0.v
+*   Version         :           1.0.5.v
 *   Created date    :           05/11/2021
-*   Last update     :           08/11/2021
+*   Last update     :           23/11/2021
 *   Author          :           Bruno Mazzei
 *   Description     :   Useful and easy-to-use API for making ASCII-based console applications for
 *                     the terminal console.
-*   Dependencies    :           stdio.h, stdlib.h and unistd.h
+*   Dependencies    :           stdio.h, stdlib.h, unistd.h and string.h
 */
 
 #ifndef __C_GUI_ENG_H__
@@ -30,14 +30,16 @@
                             }                           \
                             defaut_refresh = a;
 
-#define TURN_ON_DISPLAY   int main(int argc, char** argv) {     \
+#define DISPLAY_ON   int main(int argc, char** argv) {     \
                             CURSOR_SWITCH
 #define __START                displayBuffer	        \
 			                            = (char*)malloc(sizeof(char) * WIDTH * HIGHT);      \
                                     while(1) {                  \
+                                        Refresh();                  \
                                  
-#define __END                   }
-#define TURN_OFF_DISPLAY    DestroyAll();           \
+#define __END                   UpdateDisplay();            \
+                                                  }
+#define DISPLAY_OFF    DestroyAll();           \
                         return 0;  }
 
 extern char* displayBuffer;
@@ -54,8 +56,9 @@ typedef struct SqrObject {
     short posi_y;
 } Object;
 
-extern object_t AppendObjects_R(Object** objectlist, byte listlen);
+extern object_t AppendList(Object** objectlist, byte listlen);
 extern object_t AppendRight(object_t obj1, object_t obj2, int pad);
+extern void Center(Object* object);
 extern void DestroyAll();
 extern int DestroyObject(struct SqrObject** object);
 extern struct SqrObject* NewObject(int width, int hight);

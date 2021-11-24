@@ -9,7 +9,7 @@ static int objectlistCount = 0;
 
 char* displayBuffer;
 
-object_t AppendObjects_R(Object** objectlist, const byte listlen) {
+object_t AppendList(Object** objectlist, const byte listlen) {
 	object_t objbuffer = (objectlist[0])->skeleton;
 	
 	for (size_t i = 1; i < listlen; i++) {
@@ -48,7 +48,17 @@ object_t AppendRight(object_t obj1, object_t obj2, int pad) {
 	skeleton.canva = result;
     return skeleton;
 }
-
+void Center(Object* object) {
+	short half_width = 0, half_hight = 0;
+	half_width = WIDTH % 2 != 0 ? (WIDTH / 2) + 1 : WIDTH / 2;
+	half_hight = HIGHT % 2 != 0 ? (HIGHT / 2) + 1 : HIGHT / 2;
+	object->posi_x = object->skeleton.width % 2 != 0 ?
+							half_width - ((object->skeleton.width / 2) + 1) :
+							half_width - object->skeleton.width / 2;
+	object->posi_y = object->skeleton.hight % 2 != 0 ?
+							half_hight - ((object->skeleton.hight / 2) + 1) :
+							half_hight - object->skeleton.hight / 2;
+}
 void DestroyAll() {
 	if(displayBuffer == NULL || objectlistCount == 0)
 		return;
@@ -103,7 +113,7 @@ void Refresh() {
 void SetObject(Object *object) {
 	if(displayBuffer == NULL) {
 		fprintf(stderr, "\nERROR: Display hasn't been created.\n");
-		fprintf(stderr, "Try creating it by using the cguieng's macro \"CREATE_DISPLAY_BUFFER\"\n");
+		fprintf(stderr, "Try creating it by using the cguieng's macro \"TURN_ON_DISPLAY\"\n");
 		exit(1);
 	}
 
