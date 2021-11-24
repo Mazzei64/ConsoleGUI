@@ -9,22 +9,34 @@ static int objectlistCount = 0;
 
 char* displayBuffer;
 
-char* AppendRight(Object* obj1, Object* obj2, int pad) {
-    int obj1count = 0, obj2count = 0, count = 0,
-    len = strlen(obj1->canva) + strlen(obj2->canva);
+object_t AppendObjects_R(Object** objectlist, const byte listlen) {
+	object_t objbuffer = (objectlist[0])->skeleton;
+	
+	for (size_t i = 1; i < listlen; i++) {
+		objbuffer = AppendRight(objbuffer, objectlist[i]->skeleton, 0);
+	}
+	return objbuffer;
+}
+//update padding
+object_t AppendRight(object_t obj1, object_t obj2, int pad) {
+	object_t skeleton;
+    short obj1count = 0, obj2count = 0, count = 0,
+	len = (obj1.width * obj1.hight) + (obj2.width * obj2.hight);
+	char* result = (char*)malloc(sizeof(char) * len);
 
-    char* result = (char *)malloc(sizeof(char) * len);
+	skeleton.width = obj1.width + obj2.width + pad;
+	skeleton.hight = obj1.hight >= obj2.hight ? obj1.hight : obj2.hight;
 
     while (count < len) {
-        result[count] = obj1->canva[obj1count];
-        count++; 
-        if((obj1count + 1) % obj1->width == 0 && count >= 4) {
-            for (size_t j = 0; j < obj2->width; j++) {
+        result[count] = obj1.canva[obj1count];
+        count++;
+        if((obj1count + 1) % obj1.width == 0 && count >= 4) {
+            for (size_t j = 0; j < obj2.width; j++) {
                 if(count == len) {
                     count++;
                     break;
                 }
-                result[count] = obj2->canva[obj2count];
+                result[count] = obj2.canva[obj2count];
                 obj2count++;
                 count++;
             }
@@ -33,7 +45,8 @@ char* AppendRight(Object* obj1, Object* obj2, int pad) {
         }
         obj1count++;
     }
-    return result;
+	skeleton.canva = result;
+    return skeleton;
 }
 
 void DestroyAll() {
@@ -41,8 +54,8 @@ void DestroyAll() {
 		return;
 	
 	for (size_t i = 0; i < objectlistCount; i++) {
-		free(objectlist[i]->canva);
-		objectlist[i]->canva = NULL;
+		free(objectlist[i]->skeleton.canva);
+		objectlist[i]->skeleton.canva = NULL;
 		free(objectlist[i]);
 		objectlist[i] = NULL;
 	}
@@ -53,9 +66,9 @@ int DestroyObject(Object** object) {
 	if(*object == NULL)
 		return -1;
 
-	if((*object)->canva != NULL) {
-		free((*object)->canva);
-		(*object)->canva = NULL;
+	if((*object)->skeleton.canva != NULL) {
+		free((*object)->skeleton.canva);
+		(*object)->skeleton.canva = NULL;
 	}
 	free(*object);
 	*object = NULL;
@@ -73,9 +86,9 @@ Object* NewObject(int width, int hight) {
 		 	return NULL;
 
 	Object* new_object = (Object*)malloc(sizeof(Object));
-	new_object->canva = (char*)malloc(sizeof(char) * width * hight);
-	new_object->width = width;
-	new_object->hight = hight;
+	new_object->skeleton.canva = (char*)malloc(sizeof(char) * width * hight);
+	new_object->skeleton.width = width;
+	new_object->skeleton.hight = hight;
 	new_object->id = objectlistCount + 1;
 	objectlist[objectlistCount] = new_object;
 	objectlistCount++;
@@ -98,9 +111,9 @@ void SetObject(Object *object) {
 	        start = object->posi_x + realY;
 
 	int objectIndex = 0;
-	for (size_t i = 0; i < object->hight; i++) {
-		for (size_t j = 0; j < object->width; j++) {
-			displayBuffer[start + j] = object->canva[objectIndex];
+	for (size_t i = 0; i < object->skeleton.hight; i++) {
+		for (size_t j = 0; j < object->skeleton.width; j++) {
+			displayBuffer[start + j] = object->skeleton.canva[objectIndex];
 			objectIndex++;
 		}
 		start += WIDTH;

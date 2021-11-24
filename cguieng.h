@@ -37,26 +37,30 @@
                                     while(1) {                  \
                                  
 #define __END                   }
-#define TURN_OFF_DISPLAY    return 0;  }
+#define TURN_OFF_DISPLAY    DestroyAll();           \
+                        return 0;  }
 
 extern char* displayBuffer;
-typedef struct SqrObject {
-    short id;
+static int defaut_refresh = 15;
+typedef struct BaseObject {
     char* canva;
-    short posi_x;
-    short posi_y;
     short width;
     short hight;
+} object_t;
+typedef struct SqrObject {
+    short id;
+    object_t skeleton;
+    short posi_x;
+    short posi_y;
 } Object;
 
-extern char* AppendRight(Object* obj1, Object* obj2, int pad);
+extern object_t AppendObjects_R(Object** objectlist, byte listlen);
+extern object_t AppendRight(object_t obj1, object_t obj2, int pad);
+extern void DestroyAll();
 extern int DestroyObject(struct SqrObject** object);
 extern struct SqrObject* NewObject(int width, int hight);
 extern void Refresh();
 extern void SetObject(struct SqrObject* object);
 extern void UpdateDisplay();
-#define byte unsigned char
-
-static int defaut_refresh = 15;
 
 #endif
