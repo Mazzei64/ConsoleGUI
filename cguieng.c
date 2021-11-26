@@ -2,6 +2,7 @@
 
 static void AddToList(Object* object);
 static void DefragmentList(int currentId);
+//use int atexit(void(*func)(void)) to run DestroyAll when process is closed unexpectedly.
 void DestroyAll();
 
 static Object** objectlist;
@@ -9,20 +10,27 @@ static int objectlistCount = 0;
 
 char* displayBuffer;
 
-object_t AppendList(Object** objectlist, const byte listlen) {
-	object_t objbuffer = (objectlist[0])->skeleton;
+object_t AppendList(Object** objlist, const byte listlen) {
+	char* oldcanva = NULL;
+	object_t objbuff = (objlist[0])->skeleton;
 	
 	for (size_t i = 1; i < listlen; i++) {
-		objbuffer = AppendRight(objbuffer, objectlist[i]->skeleton, 0);
+		if(i > 1)
+			oldcanva = objbuff.canva;
+
+		objbuff = AppendRight(objbuff, (objlist[i])->skeleton, 0);
+
+		if(oldcanva != NULL)
+			free(oldcanva);
 	}
-	return objbuffer;
+	return objbuff;
 }
 //update padding
 object_t AppendRight(object_t obj1, object_t obj2, int pad) {
 	object_t skeleton;
     short obj1count = 0, obj2count = 0, count = 0,
 	len = (obj1.width * obj1.hight) + (obj2.width * obj2.hight);
-	char* result = (char*)malloc(sizeof(char) * len);
+	char* result = (char*)malloc(sizeof(char) * len + 1);
 
 	skeleton.width = obj1.width + obj2.width + pad;
 	skeleton.hight = obj1.hight >= obj2.hight ? obj1.hight : obj2.hight;
@@ -52,15 +60,16 @@ void Center(Object* object) {
 	short half_width = 0, half_hight = 0;
 	half_width = WIDTH % 2 != 0 ? (WIDTH / 2) + 1 : WIDTH / 2;
 	half_hight = HIGHT % 2 != 0 ? (HIGHT / 2) + 1 : HIGHT / 2;
-	object->posi_x = object->skeleton.width % 2 != 0 ?
+	object->state.posi_x = object->skeleton.width % 2 != 0 ?
 							half_width - ((object->skeleton.width / 2) + 1) :
 							half_width - object->skeleton.width / 2;
-	object->posi_y = object->skeleton.hight % 2 != 0 ?
+							
+	object->state.posi_y = object->skeleton.hight % 2 != 0 ?
 							half_hight - ((object->skeleton.hight / 2) + 1) :
 							half_hight - object->skeleton.hight / 2;
 }
 void DestroyAll() {
-	if(displayBuffer == NULL || objectlistCount == 0)
+	if(displayBuffer == NULL && objectlistCount == 0)
 		return;
 	
 	for (size_t i = 0; i < objectlistCount; i++) {
@@ -102,7 +111,7 @@ Object* NewObject(int width, int hight) {
 	new_object->id = objectlistCount + 1;
 	objectlist[objectlistCount] = new_object;
 	objectlistCount++;
-	AddToList(new_object);
+
 	return new_object;
 }
 void Refresh() {
@@ -117,8 +126,8 @@ void SetObject(Object *object) {
 		exit(1);
 	}
 
-    int realY = object->posi_y * WIDTH,
-	        start = object->posi_x + realY;
+    int realY = object->state.posi_y * WIDTH,
+	        start = object->state.posi_x + realY;
 
 	int objectIndex = 0;
 	for (size_t i = 0; i < object->skeleton.hight; i++) {
@@ -129,10 +138,9 @@ void SetObject(Object *object) {
 		start += WIDTH;
 	}
 }
-
 void UpdateDisplay() {
 	int i = 0;
-	clrscr();
+	gotoxy(0,0);
 	usleep(1000000 / REFRESH_RATE);
 	while (i < WIDTH * HIGHT) {
 		printf("%c", displayBuffer[i]);
@@ -144,7 +152,7 @@ void UpdateDisplay() {
 	Description: Auxiliary Functions Section
 */
 static void AddToList(Object* object) {
-	objectlist[objectlistCount] = object;
+	objectlist[objectlistCount - 1] = object;
 }
 static void DefragmentList(int currentId) {
 	for (size_t i = (currentId - 1); i < objectlistCount + 1; i++) {

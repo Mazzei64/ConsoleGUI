@@ -17,7 +17,9 @@
 #include <unistd.h>
 
 #define byte unsigned char
+#define word unsigned short
 #define clrscr() printf("\e[1;1H\e[2J")
+#define gotoxy(x,y) printf("\033[%d;%dH", (y), (x))
 #define CURSOR_SWITCH printf("\e[?25l");
 #define MAX_OBJLIST_SIZE 256
 #define WIDTH 238
@@ -32,6 +34,7 @@
 
 #define DISPLAY_ON   int main(int argc, char** argv) {     \
                             CURSOR_SWITCH
+
 #define __START                displayBuffer	        \
 			                            = (char*)malloc(sizeof(char) * WIDTH * HIGHT);      \
                                     while(1) {                  \
@@ -46,14 +49,23 @@ extern char* displayBuffer;
 static int defaut_refresh = 15;
 typedef struct BaseObject {
     char* canva;
-    short width;
-    short hight;
+    word width;
+    word hight;
 } object_t;
+typedef struct StObject {
+    word posi_x;
+    word posi_y;
+    byte flags;
+} stobject_t;
+/*
+    0000 0001 --> modified state
+    0000 0010 --> enabled state
+    0000 0100 --> 
+*/
 typedef struct SqrObject {
     short id;
     object_t skeleton;
-    short posi_x;
-    short posi_y;
+    stobject_t state;
 } Object;
 
 extern object_t AppendList(Object** objectlist, byte listlen);
