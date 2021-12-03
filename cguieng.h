@@ -1,7 +1,7 @@
 /*  Project Name    :           ConsoleGUI Engine
 *   Version         :           1.0.5.v
 *   Created date    :           05/11/2021
-*   Last update     :           23/11/2021
+*   Last update     :           28/11/2021
 *   Author          :           Bruno Mazzei
 *   Description     :   Useful and easy-to-use API for making ASCII-based console applications for
 *                     the terminal console.
@@ -11,20 +11,30 @@
 #ifndef __C_GUI_ENG_H__
 #define __C_GUI_ENG_H__
 
+#include <sys/select.h>
+#include <termio.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
+#include "colors.h"
+
 #define byte unsigned char
 #define word unsigned short
+#define NB_ENABLE 1
+#define NB_DISABLE 0
+#define EXIT exit_status = 0;
 #define clrscr() printf("\e[1;1H\e[2J")
 #define gotoxy(x,y) printf("\033[%d;%dH", (y), (x))
+#define SETOFF_COLORSTATE colored_state = 0;
+#define SETON_COLORSTATE colored_state = 1;
 #define CURSOR_SWITCH printf("\e[?25l");
 #define MAX_OBJLIST_SIZE 256
+#define MAX_OBJSIZE 14280
 #define WIDTH 238
 #define HIGHT 60
-#define SCREEN_SIZE 238 * 60
+#define SCREEN_SIZE 14280
 #define REFRESH_RATE defaut_refresh
 #define SET_REFRESH_RATE(a)     if(a<0) {   \
                             fprintf(stderr,"\nERROR: Invalid refresh rate value. Can't be equal or less than 0.\n");   \
@@ -33,34 +43,46 @@
                             defaut_refresh = a;
 
 #define DISPLAY_ON   int main(int argc, char** argv) {     \
-                            CURSOR_SWITCH
+                            CURSOR_SWITCH                       \
+                            SetTerminalSTDINBlkSt(NB_ENABLE);
 
 #define __START                displayBuffer	        \
 			                            = (char*)malloc(sizeof(char) * WIDTH * HIGHT);      \
-                                    while(1) {                  \
+                                    while(exit_status) {                  \
                                         Refresh();                  \
                                  
 #define __END                   UpdateDisplay();            \
                                                   }
 #define DISPLAY_OFF    DestroyAll();           \
+                       SetTerminalSTDINBlkSt(NB_DISABLE);        \
                         return 0;  }
 
 extern char* displayBuffer;
-static int defaut_refresh = 15;
+static byte defaut_refresh = 15;
+static byte exit_status = 1;
+byte colored_state = 1;
+
+typedef struct FlagsField {
+    byte modified_state : 1;
+    byte enabled_state : 1;
+} flags_t;
+
 typedef struct BaseObject {
     char* canva;
     word width;
     word hight;
+
 } object_t;
 typedef struct StObject {
-    word posi_x;
-    word posi_y;
-    byte flags;
+    byte posi_x;
+    byte posi_y;
+    flags_t flags;
 } stobject_t;
 /*
-    0000 0001 --> modified state
-    0000 0010 --> enabled state
-    0000 0100 --> 
+    0000 0000 0000 0001 --> modified state         // modified state flag tells the engine that the object is able to be written onto the display buffer.
+    0000 0000 0000 0010 --> enabled state         // enabled state determines if the object can or cannot be written onto the display buffer. If both modified and enabled states
+                                                 aren't both enabled, the object cannot be written; both need to be set simultaneously.
+    0000 0000 0000 0100 -->                     //
 */
 typedef struct SqrObject {
     short id;
@@ -73,8 +95,10 @@ extern object_t AppendRight(object_t obj1, object_t obj2, int pad);
 extern void Center(Object* object);
 extern void DestroyAll();
 extern int DestroyObject(struct SqrObject** object);
+extern char Key();
 extern struct SqrObject* NewObject(int width, int hight);
 extern void Refresh();
+extern void SetTerminalSTDINBlkSt(byte state);
 extern void SetObject(struct SqrObject* object);
 extern void UpdateDisplay();
 

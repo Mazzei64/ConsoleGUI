@@ -37,4 +37,4 @@ set_lib:
 	LD_LIBRARY_PATH=../ConsoleGUI ; echo $$LD_LIBRARY_PATH
 
 clean:
-	rm -f *.a *.so *.o test_*
+	rm -f *.a *.so *.o test_* test

@@ -96,6 +96,30 @@ int DestroyObject(Object** object) {
 
 	return 0;
 }
+
+//untested
+char Key() {
+
+	char input;
+
+	struct timeval tv;
+    fd_set fds;
+    tv.tv_sec = 0;
+    tv.tv_usec = 0;
+    FD_ZERO(&fds);                                                                      //GETS SIGNAL FROM STDIN AND RETURNS IF IT IS 1 OR 0
+    FD_SET(STDIN_FILENO, &fds); //STDIN_FILENO is 0
+    select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);
+
+	usleep(1);
+	if(FD_ISSET(STDIN_FILENO, &fds) != 0) {
+		input = fgetc(stdin);
+		fprintf(stderr, "\b ");
+		//usleep(100000);
+		return input;
+	}
+	return 0;
+}
+
 Object* NewObject(int width, int hight) {
 	if(objectlist == NULL)
 		objectlist = (Object**)malloc(sizeof(Object*) * MAX_OBJLIST_SIZE);
@@ -137,6 +161,21 @@ void SetObject(Object *object) {
 		}
 		start += WIDTH;
 	}
+}
+//!!!UNTESTED
+void SetTerminalSTDINBlkSt(byte state) {
+	struct termios ttystate;
+
+    tcgetattr(STDIN_FILENO, &ttystate);
+
+    if (state==NB_ENABLE) {
+        ttystate.c_lflag &= ~ICANON & ~ECHO;
+        ttystate.c_cc[VMIN] = 1;                                                        //DISABLES OR ENABLES CANONICAL MODE FROM THE TERMINAL
+    }
+    else if (state==NB_DISABLE) {
+        ttystate.c_lflag |= ICANON | ECHO;
+    }
+    tcsetattr(STDIN_FILENO, TCSANOW, &ttystate);
 }
 void UpdateDisplay() {
 	int i = 0;
