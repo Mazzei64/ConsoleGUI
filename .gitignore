@@ -2,3 +2,8 @@
 .vscode
 test*
 doomwatch_update.sh
+reminders.txt
+*.a
+*.o
+*.so
+colors.h

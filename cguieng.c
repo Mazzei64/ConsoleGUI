@@ -2,7 +2,6 @@
 
 static void AddToList(Object* object);
 static void DefragmentList(int currentId);
-//use int atexit(void(*func)(void)) to run DestroyAll when process is closed unexpectedly.
 void DestroyAll();
 
 static Object** objectlist;
@@ -25,7 +24,6 @@ object_t AppendList(Object** objlist, const byte listlen) {
 	}
 	return objbuff;
 }
-//update padding
 object_t AppendRight(object_t obj1, object_t obj2, int pad) {
 	object_t skeleton;
     short obj1count = 0, obj2count = 0, count = 0,
@@ -96,8 +94,6 @@ int DestroyObject(Object** object) {
 
 	return 0;
 }
-
-//untested
 char Key() {
 
 	char input;
@@ -106,15 +102,14 @@ char Key() {
     fd_set fds;
     tv.tv_sec = 0;
     tv.tv_usec = 0;
-    FD_ZERO(&fds);                                                                      //GETS SIGNAL FROM STDIN AND RETURNS IF IT IS 1 OR 0
-    FD_SET(STDIN_FILENO, &fds); //STDIN_FILENO is 0
+    FD_ZERO(&fds);                                                                 
+    FD_SET(STDIN_FILENO, &fds); 
     select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);
 
 	usleep(1);
 	if(FD_ISSET(STDIN_FILENO, &fds) != 0) {
 		input = fgetc(stdin);
 		fprintf(stderr, "\b ");
-		//usleep(100000);
 		return input;
 	}
 	return 0;
@@ -162,7 +157,6 @@ void SetObject(Object *object) {
 		start += WIDTH;
 	}
 }
-//!!!UNTESTED
 void SetTerminalSTDINBlkSt(byte state) {
 	struct termios ttystate;
 
@@ -170,7 +164,7 @@ void SetTerminalSTDINBlkSt(byte state) {
 
     if (state==NB_ENABLE) {
         ttystate.c_lflag &= ~ICANON & ~ECHO;
-        ttystate.c_cc[VMIN] = 1;                                                        //DISABLES OR ENABLES CANONICAL MODE FROM THE TERMINAL
+        ttystate.c_cc[VMIN] = 1;
     }
     else if (state==NB_DISABLE) {
         ttystate.c_lflag |= ICANON | ECHO;

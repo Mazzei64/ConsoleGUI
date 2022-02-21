@@ -78,18 +78,11 @@ typedef struct StObject {
     byte posi_y;
     flags_t flags;
 } stobject_t;
-/*
-    0000 0000 0000 0001 --> modified state         // modified state flag tells the engine that the object is able to be written onto the display buffer.
-    0000 0000 0000 0010 --> enabled state         // enabled state determines if the object can or cannot be written onto the display buffer. If both modified and enabled states
-                                                 aren't both enabled, the object cannot be written; both need to be set simultaneously.
-    0000 0000 0000 0100 -->                     //
-*/
 typedef struct SqrObject {
     short id;
     object_t skeleton;
     stobject_t state;
 } Object;
-
 extern object_t AppendList(Object** objectlist, byte listlen);
 extern object_t AppendRight(object_t obj1, object_t obj2, int pad);
 extern void Center(Object* object);
