@@ -22,8 +22,8 @@
 
 #define byte unsigned char
 #define word unsigned short
-#define NB_ENABLE 1
-#define NB_DISABLE 0
+#define ENABLE 1
+#define DISABLE 0
 #define EXIT exit_status = 0;
 #define clrscr() printf("\e[1;1H\e[2J")
 #define gotoxy(x,y) printf("\033[%d;%dH", (y), (x))
@@ -44,7 +44,7 @@
 
 #define DISPLAY_ON   int main(int argc, char** argv) {     \
                             CURSOR_SWITCH                       \
-                            SetTerminalSTDINBlkSt(NB_ENABLE);
+                            SetTerminalSTDINBlkSt(ENABLE);
 
 #define __START                displayBuffer	        \
 			                            = (char*)malloc(sizeof(char) * WIDTH * HIGHT);      \
@@ -54,7 +54,7 @@
 #define __END                   UpdateDisplay();            \
                                                   }
 #define DISPLAY_OFF    DestroyAll();           \
-                       SetTerminalSTDINBlkSt(NB_DISABLE);        \
+                       SetTerminalSTDINBlkSt(DISABLE);        \
                         return 0;  }
 
 extern char* displayBuffer;
@@ -63,6 +63,7 @@ static byte exit_status = 1;
 byte colored_state = 1;
 
 typedef struct FlagsField {
+    byte cached : 1;
     byte modified_state : 1;
     byte enabled_state : 1;
 } flags_t;
@@ -83,6 +84,7 @@ typedef struct SqrObject {
     object_t skeleton;
     stobject_t state;
 } Object;
+
 extern object_t AppendList(Object** objectlist, byte listlen);
 extern object_t AppendRight(object_t obj1, object_t obj2, int pad);
 extern void Center(Object* object);

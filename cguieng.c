@@ -133,11 +133,11 @@ Object* NewObject(int width, int hight) {
 
 	return new_object;
 }
-void Refresh() {
-	for (size_t i = 0; i < WIDTH * HIGHT; i++) {
-		displayBuffer[i] = ' ';
-	}
-}
+// void Refresh() {
+// 	for (size_t i = 0; i < WIDTH * HIGHT; i++) {
+// 		displayBuffer[i] = ' ';
+// 	}
+// }
 void SetObject(Object *object) {
 	if(displayBuffer == NULL) {
 		fprintf(stderr, "\nERROR: Display hasn't been created.\n");
@@ -145,6 +145,28 @@ void SetObject(Object *object) {
 		exit(1);
 	}
 
+    int realY = object->state.posi_y * WIDTH,
+	        start = object->state.posi_x + realY;
+
+	int objectIndex = 0;
+	for (size_t i = 0; i < object->skeleton.hight; i++) {
+		for (size_t j = 0; j < object->skeleton.width; j++) {
+			displayBuffer[start + j] = object->skeleton.canva[objectIndex];
+			objectIndex++;
+		}
+		start += WIDTH;
+	}
+}
+void TEST_SetObject(Object *object) {
+	if(displayBuffer == NULL) {
+		fprintf(stderr, "\nERROR: Display hasn't been created.\n");
+		fprintf(stderr, "Try creating it by using the cguieng's macro \"TURN_ON_DISPLAY\"\n");
+		exit(1);
+	}
+	static Object objectCache[MAX_OBJLIST_SIZE];
+	if(object->state.flags.cached != ENABLE) {
+
+	}
     int realY = object->state.posi_y * WIDTH,
 	        start = object->state.posi_x + realY;
 
