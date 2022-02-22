@@ -91,7 +91,6 @@ extern void DestroyAll();
 extern int DestroyObject(struct SqrObject** object);
 extern char Key();
 extern struct SqrObject* NewObject(int width, int hight);
-extern void Refresh();
 extern void SetTerminalSTDINBlkSt(byte state);
 extern void SetObject(struct SqrObject* object);
 extern void UpdateDisplay();

@@ -142,15 +142,12 @@ Object* NewObject(int width, int hight) {
 
 	return new_object;
 }
-void Refresh() {
-	for (size_t i = 0; i < WIDTH * HIGHT; i++) {
-		displayBuffer[i] = ' ';
-	}
-}
 void SetObject(Object* object) {
 	static byte begin = 0;
 	if(begin != 1) {
-		Refresh();
+		for (size_t i = 0; i < SCREEN_SIZE; i++) {
+			displayBuffer[i] = ' ';
+		}
 		begin = 1;
 	}
 	if(displayBuffer == NULL) {
@@ -221,6 +218,8 @@ static void BuffObj(Object* object) {
 	}
 	objectCache[object->state.cachedAt].state.posi_x = object->state.posi_x;
 	objectCache[object->state.cachedAt].state.posi_y = object->state.posi_y;
+	objectCache[object->state.cachedAt].skeleton.hight = object->skeleton.hight;
+	objectCache[object->state.cachedAt].skeleton.width = object->skeleton.width;
 }
 static void DefragmentList(int currentId) {
 	for (size_t i = (currentId - 1); i < objectlistCount + 1; i++) {
