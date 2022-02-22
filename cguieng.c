@@ -3,6 +3,8 @@
 static void AddToList(Object* object);
 static void BuffObj(Object* object);
 static void DefragmentList(int currentId);
+static void DefragmentCache(int cachedAt);
+static void ZeroCachedObject(Object* object);
 void DestroyAll();
 
 static Object** objectlist;
@@ -84,7 +86,8 @@ void DestroyAll() {
 }
 // Has to update object cache.
 int DestroyObject(Object** object) {
-	int currentId = (*object)->id;
+	int currentId = (*object)->id,
+		currentCached = (*object)->state.cachedAt;
 	if(*object == NULL)
 		return -1;
 
@@ -96,7 +99,7 @@ int DestroyObject(Object** object) {
 	*object = NULL;
 
 	DefragmentList(currentId);
-
+	DefragmentCache(currentCached);
 	return 0;
 }
 char Key() {
@@ -228,4 +231,25 @@ static void DefragmentList(int currentId) {
 	for (size_t i = (currentId - 1); i < objectlistCount; i++) {
 		objectlist[i]->id -= 1;
 	}	
+}
+static void DefragmentCache(int cachedAt) {
+	for (size_t i = (cachedAt - 1); i < objectCacheCount + 1; i++) {
+		objectCache[i] = objectCache[i+1];
+	}
+	ZeroCachedObject(&objectCache[objectCacheCount - 1]);
+	objectCacheCount--;
+	for (size_t i = (cachedAt - 1); i < objectCacheCount; i++) {
+		objectCache[i].state.cachedAt -= 1;
+	}	
+}
+static void ZeroCachedObject(Object* object) {
+	object->id = 0;
+	object->skeleton.canva = NULL;
+	object->skeleton.hight = 0;
+	object->skeleton.width = 0;
+	object->state.posi_x = 0;
+	object->state.posi_y = 0;
+	object->state.flags.cached = 0;
+	object->state.flags.modified_state = 0;
+	object->state.cachedAt = 0;
 }
