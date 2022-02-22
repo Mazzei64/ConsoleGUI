@@ -1,11 +1,14 @@
 #include "cguieng.h"
 
 static void AddToList(Object* object);
+static void BuffObj(Object* object);
 static void DefragmentList(int currentId);
 void DestroyAll();
 
 static Object** objectlist;
 static int objectlistCount = 0;
+static Object objectCache [MAX_OBJLIST_SIZE];
+static short objectCacheCount = 0;
 
 char* displayBuffer;
 
@@ -65,6 +68,7 @@ void Center(Object* object) {
 	object->state.posi_y = object->skeleton.hight % 2 != 0 ?
 							half_hight - ((object->skeleton.hight / 2) + 1) :
 							half_hight - object->skeleton.hight / 2;
+	object->state.flags.modified_state = ENABLE;
 }
 void DestroyAll() {
 	if(displayBuffer == NULL && objectlistCount == 0)
@@ -78,6 +82,7 @@ void DestroyAll() {
 	}
 	
 }
+// Has to update object cache.
 int DestroyObject(Object** object) {
 	int currentId = (*object)->id;
 	if(*object == NULL)
@@ -128,55 +133,39 @@ Object* NewObject(int width, int hight) {
 	new_object->skeleton.width = width;
 	new_object->skeleton.hight = hight;
 	new_object->id = objectlistCount + 1;
+	new_object->state.flags.modified_state = DISABLE;
 	objectlist[objectlistCount] = new_object;
 	objectlistCount++;
 
 	return new_object;
 }
-// void Refresh() {
-// 	for (size_t i = 0; i < WIDTH * HIGHT; i++) {
-// 		displayBuffer[i] = ' ';
-// 	}
-// }
-void SetObject(Object *object) {
-	if(displayBuffer == NULL) {
-		fprintf(stderr, "\nERROR: Display hasn't been created.\n");
-		fprintf(stderr, "Try creating it by using the cguieng's macro \"TURN_ON_DISPLAY\"\n");
-		exit(1);
-	}
-
-    int realY = object->state.posi_y * WIDTH,
-	        start = object->state.posi_x + realY;
-
-	int objectIndex = 0;
-	for (size_t i = 0; i < object->skeleton.hight; i++) {
-		for (size_t j = 0; j < object->skeleton.width; j++) {
-			displayBuffer[start + j] = object->skeleton.canva[objectIndex];
-			objectIndex++;
-		}
-		start += WIDTH;
+void Refresh() {
+	for (size_t i = 0; i < WIDTH * HIGHT; i++) {
+		displayBuffer[i] = ' ';
 	}
 }
-void TEST_SetObject(Object *object) {
+void SetObject(Object* object) {
+	static byte begin = 0;
+	if(begin != 1) {
+		Refresh();
+		begin = 1;
+	}
 	if(displayBuffer == NULL) {
 		fprintf(stderr, "\nERROR: Display hasn't been created.\n");
-		fprintf(stderr, "Try creating it by using the cguieng's macro \"TURN_ON_DISPLAY\"\n");
+		fprintf(stderr, "Try creating it by using the cguieng's macro \"DISPLAY_ON\"\n");
 		exit(1);
 	}
-	static Object objectCache[MAX_OBJLIST_SIZE];
-	if(object->state.flags.cached != ENABLE) {
-
+	if(object->state.flags.cached == DISABLE) {
+		objectCache[objectCacheCount] = *object;
+		object->state.cachedAt = objectCacheCount;
+		objectCacheCount++;
+		object->state.flags.cached = ENABLE;
 	}
-    int realY = object->state.posi_y * WIDTH,
-	        start = object->state.posi_x + realY;
-
-	int objectIndex = 0;
-	for (size_t i = 0; i < object->skeleton.hight; i++) {
-		for (size_t j = 0; j < object->skeleton.width; j++) {
-			displayBuffer[start + j] = object->skeleton.canva[objectIndex];
-			objectIndex++;
-		}
-		start += WIDTH;
+	if (object->state.flags.cached == ENABLE) {
+		if(object->state.flags.modified_state == ENABLE) {
+			BuffObj(object);
+			object->state.flags.modified_state = DISABLE;
+		}	
 	}
 }
 void SetTerminalSTDINBlkSt(byte state) {
@@ -184,11 +173,11 @@ void SetTerminalSTDINBlkSt(byte state) {
 
     tcgetattr(STDIN_FILENO, &ttystate);
 
-    if (state==NB_ENABLE) {
+    if (state==ENABLE) {
         ttystate.c_lflag &= ~ICANON & ~ECHO;
         ttystate.c_cc[VMIN] = 1;
     }
-    else if (state==NB_DISABLE) {
+    else if (state==DISABLE) {
         ttystate.c_lflag |= ICANON | ECHO;
     }
     tcsetattr(STDIN_FILENO, TCSANOW, &ttystate);
@@ -208,6 +197,27 @@ void UpdateDisplay() {
 */
 static void AddToList(Object* object) {
 	objectlist[objectlistCount - 1] = object;
+}
+static void BuffObj(Object* object) {
+	int objectIndex = 0;
+	int	start = object->state.posi_x + object->state.posi_y * WIDTH,
+		old_start = objectCache[object->state.cachedAt].state.posi_x + objectCache[object->state.cachedAt].state.posi_y * WIDTH;
+	
+	for (size_t i = 0; i < object->skeleton.hight; i++) {
+		for (size_t j = 0; j < object->skeleton.width + 2; j++) {
+			displayBuffer[old_start + j] = ' ';
+		}
+		old_start += WIDTH;
+	}
+	for (size_t i = 0; i < object->skeleton.hight; i++) {
+		for (size_t j = 0; j < object->skeleton.width; j++) {
+			displayBuffer[start + j] = object->skeleton.canva[objectIndex];
+			objectIndex++;
+		}
+		start += WIDTH;
+	}
+	objectCache[object->state.cachedAt].state.posi_x = object->state.posi_x;
+	objectCache[object->state.cachedAt].state.posi_y = object->state.posi_y;
 }
 static void DefragmentList(int currentId) {
 	for (size_t i = (currentId - 1); i < objectlistCount + 1; i++) {

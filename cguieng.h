@@ -43,20 +43,19 @@
                             defaut_refresh = a;
 
 #define DISPLAY_ON   int main(int argc, char** argv) {     \
-                            CURSOR_SWITCH                       \
+                            CURSOR_SWITCH                      \
                             SetTerminalSTDINBlkSt(ENABLE);
 
 #define __START                displayBuffer	        \
 			                            = (char*)malloc(sizeof(char) * WIDTH * HIGHT);      \
                                     while(exit_status) {                  \
-                                        Refresh();                  \
                                  
-#define __END                   UpdateDisplay();            \
-                                                  }
-#define DISPLAY_OFF    DestroyAll();           \
+#define __END           UpdateDisplay();            \
+                                              }           
+                                                  
+#define DISPLAY_OFF        DestroyAll();                \
                        SetTerminalSTDINBlkSt(DISABLE);        \
                         return 0;  }
-
 extern char* displayBuffer;
 static byte defaut_refresh = 15;
 static byte exit_status = 1;
@@ -65,7 +64,6 @@ byte colored_state = 1;
 typedef struct FlagsField {
     byte cached : 1;
     byte modified_state : 1;
-    byte enabled_state : 1;
 } flags_t;
 
 typedef struct BaseObject {
@@ -77,6 +75,7 @@ typedef struct BaseObject {
 typedef struct StObject {
     byte posi_x;
     byte posi_y;
+    short cachedAt;
     flags_t flags;
 } stobject_t;
 typedef struct SqrObject {
