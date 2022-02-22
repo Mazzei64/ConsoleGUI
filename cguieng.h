@@ -1,11 +1,11 @@
 /*  Project Name    :           ConsoleGUI Engine
-*   Version         :           1.0.5.v
+*   Version         :           1.1.0.v
 *   Created date    :           05/11/2021
 *   Last update     :           28/11/2021
 *   Author          :           Bruno Mazzei
 *   Description     :   Useful and easy-to-use API for making ASCII-based console applications for
 *                     the terminal console.
-*   Dependencies    :           stdio.h, stdlib.h, unistd.h and string.h
+*   Dependencies    :           sys/select.h, stdio.h, stdlib.h, unistd.h, string.h, termio.h, colors.h
 */
 
 #ifndef __C_GUI_ENG_H__
