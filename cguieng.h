@@ -36,12 +36,12 @@
 #define WIDTH 238
 #define HIGHT 60
 #define SCREEN_SIZE 14280
-#define REFRESH_RATE defaut_refresh
+#define REFRESH_RATE defaut_refresh_rate
 #define SET_REFRESH_RATE(a)     if(a<0) {   \
                             fprintf(stderr,"\nERROR: Invalid refresh rate value. Can't be equal or less than 0.\n");   \
                             exit(1);                              \
                             }                           \
-                            defaut_refresh = a;
+                            defaut_refresh_rate = a;
 
 #define DISPLAY_ON   int main(int argc, char** argv) {     \
                             CURSOR_SWITCH                      \
@@ -58,7 +58,7 @@
                        SetTerminalSTDINBlkSt(DISABLE);        \
                         return 0;  }
 extern char* displayBuffer;
-static byte defaut_refresh = 15;
+static byte defaut_refresh_rate = 15;
 static byte exit_status = 1;
 byte colored_state = 1;
 
