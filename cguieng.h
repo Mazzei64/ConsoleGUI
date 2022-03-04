@@ -25,17 +25,18 @@
 #define word unsigned short
 #define ENABLE 1
 #define DISABLE 0
-#define EXIT exit_status = 0;
 #define clrscr() printf("\e[1;1H\e[2J")
 #define gotoxy(x,y) printf("\033[%d;%dH", (y), (x))
-#define SETOFF_COLORSTATE colored_state = 0;
-#define SETON_COLORSTATE colored_state = 1;
 #define CURSOR_SWITCH printf("\e[?25l");
 #define MAX_OBJLIST_SIZE 256
 #define MAX_OBJSIZE 14280
 #define WIDTH 238
 #define HIGHT 60
 #define SCREEN_SIZE 14280
+#define EXIT exit_status = 0;
+#define SET_COLORSTATE_ON colored_state = 0;
+#define SET_COLORSTATE_ON colored_state = 1;
+#define COLOR_STATE colored_state
 #define REFRESH_RATE defaut_refresh_rate
 #define SET_REFRESH_RATE(a)     if(a<0) {   \
                             fprintf(stderr,"\nERROR: Invalid refresh rate value. Can't be equal or less than 0.\n");   \
@@ -60,7 +61,7 @@
 extern char* displayBuffer;
 static byte defaut_refresh_rate = 15;
 static byte exit_status = 1;
-byte colored_state = 1;
+static byte colored_state = 1;
 
 typedef struct FlagsField {
     byte cached : 1;
