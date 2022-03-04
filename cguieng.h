@@ -5,7 +5,7 @@
 *   Author          :           Bruno Mazzei
 *   Description     :   Useful and easy-to-use API for making ASCII-based console applications for
 *                     the terminal console.
-*   Dependencies    :           sys/select.h, stdio.h, stdlib.h, unistd.h, string.h, termio.h, colors.h
+*   Dependencies    :           sys/select.h, stdio.h, stdlib.h, unistd.h, string.h, termio.h, colors.h, errno.h
 */
 
 #ifndef __C_GUI_ENG_H__
@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "colors.h"
 
@@ -89,6 +90,7 @@ extern void Center(Object* object);
 extern void DestroyAll();
 extern int DestroyObject(struct SqrObject** object);
 extern char Key();
+extern void LoadCanva(object_t skeleton, const char* __PATH);
 extern struct SqrObject* NewObject(int width, int hight);
 extern void SetTerminalSTDINBlkSt(byte state);
 extern void SetObject(struct SqrObject* object);

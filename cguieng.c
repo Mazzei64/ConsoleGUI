@@ -122,7 +122,22 @@ char Key() {
 	}
 	return 0;
 }
-
+void LoadCanva(object_t skeleton, const char* __PATH) {
+	FILE* fp;
+	short MAX_SIZE = skeleton.width + 2;
+	char buffer[MAX_SIZE];
+	if((fp = fopen(__PATH, "r")) == NULL) {
+		fprintf(stderr, "Error opening file: %s\n", strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+	while (fgets(buffer, MAX_SIZE, fp) != NULL) {
+		if(buffer[MAX_SIZE - 2] == '\n')
+			buffer[MAX_SIZE - 2] = '\0';
+		
+		strcat(skeleton.canva, buffer);
+	}
+	fclose(fp);
+}
 Object* NewObject(int width, int hight) {
 	if(objectlist == NULL)
 		objectlist = (Object**)malloc(sizeof(Object*) * MAX_OBJLIST_SIZE);
