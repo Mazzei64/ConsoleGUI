@@ -143,12 +143,12 @@ Object* NewObject(int width, int hight) {
 	return new_object;
 }
 void SetObject(Object* object) {
-	static byte begin = 0;
-	if(begin != 1) {
+	static byte begin = DISABLE;
+	if(begin == DISABLE) {
 		for (size_t i = 0; i < SCREEN_SIZE; i++) {
 			displayBuffer[i] = ' ';
 		}
-		begin = 1;
+		begin = ENABLE;
 	}
 	if(displayBuffer == NULL) {
 		fprintf(stderr, "\nERROR: Display hasn't been created.\n");
@@ -186,7 +186,7 @@ void UpdateDisplay() {
 	int i = 0;
 	gotoxy(0,0);
 	usleep(1000000 / REFRESH_RATE);
-	while (i < WIDTH * HIGHT) {
+	while (i < SCREEN_SIZE) {
 		printf("%c", displayBuffer[i]);
 		i++;
 	}

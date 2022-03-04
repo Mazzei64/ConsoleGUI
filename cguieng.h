@@ -47,7 +47,7 @@
                             SetTerminalSTDINBlkSt(ENABLE);
 
 #define __START                displayBuffer	        \
-			                            = (char*)malloc(sizeof(char) * WIDTH * HIGHT);      \
+			                            = (char*)malloc(sizeof(char) * SCREEN_SIZE);      \
                                     while(exit_status) {                  \
                                  
 #define __END           UpdateDisplay();            \
@@ -70,7 +70,6 @@ typedef struct BaseObject {
     char* canva;
     word width;
     word hight;
-
 } object_t;
 typedef struct StObject {
     byte posi_x;
