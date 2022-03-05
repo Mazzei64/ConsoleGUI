@@ -40,7 +40,7 @@
 #define REFRESH_RATE defaut_refresh_rate
 #define SET_REFRESH_RATE(a)     if(a<0) {   \
                             fprintf(stderr,"\nERROR: Invalid refresh rate value. Can't be equal or less than 0.\n");   \
-                            exit(1);                              \
+                            exit(EXIT_FAILURE);                              \
                             }                           \
                             defaut_refresh_rate = a;
 

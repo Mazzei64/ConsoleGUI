@@ -168,7 +168,7 @@ void SetObject(Object* object) {
 	if(displayBuffer == NULL) {
 		fprintf(stderr, "\nERROR: Display hasn't been created.\n");
 		fprintf(stderr, "Try creating it by using the cguieng's macro \"DISPLAY_ON\"\n");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	if(object->state.flags.cached == DISABLE) {
 		objectCache[objectCacheCount] = *object;
@@ -201,6 +201,9 @@ void UpdateDisplay() {
 	int i = 0;
 	gotoxy(0,0);
 	usleep(1000000 / REFRESH_RATE);
+	if(COLOR_STATE == ENABLE) {
+		// what should we do?
+	}
 	while (i < SCREEN_SIZE) {
 		printf("%c", displayBuffer[i]);
 		i++;
