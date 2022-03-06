@@ -4,6 +4,7 @@ static void AddToList(Object* object);
 static void BuffObj(Object* object);
 static void DefragmentList(int currentId);
 static void DefragmentCache(int cachedAt);
+static void printColoredDisplay();
 static void ZeroCachedObject(Object* object);
 void DestroyAll();
 
@@ -122,10 +123,13 @@ char Key() {
 	}
 	return 0;
 }
-void LoadCanva(object_t skeleton, const char* __PATH) {
+void LoadCanvaFromFile(Object* object, const char* __PATH) {
 	FILE* fp;
-	short MAX_SIZE = skeleton.width + 2;
+	short MAX_SIZE = object->skeleton.width + 2;
 	char buffer[MAX_SIZE];
+	if(COLOR_STATE == ENABLE && object->state.flags.colored == ENABLE) {
+		
+	}
 	if((fp = fopen(__PATH, "r")) == NULL) {
 		fprintf(stderr, "Error opening file: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
@@ -134,7 +138,7 @@ void LoadCanva(object_t skeleton, const char* __PATH) {
 		if(buffer[MAX_SIZE - 2] == '\n')
 			buffer[MAX_SIZE - 2] = '\0';
 		
-		strcat(skeleton.canva, buffer);
+		strcat(object->skeleton.canva, buffer);
 	}
 	fclose(fp);
 }
@@ -202,7 +206,7 @@ void UpdateDisplay() {
 	gotoxy(0,0);
 	usleep(1000000 / REFRESH_RATE);
 	if(COLOR_STATE == ENABLE) {
-		// what should we do?
+		printColoredDisplay();
 	}
 	while (i < SCREEN_SIZE) {
 		printf("%c", displayBuffer[i]);
@@ -259,6 +263,27 @@ static void DefragmentCache(int cachedAt) {
 		objectCache[i].state.cachedAt -= 1;
 	}	
 }
+// static void printColoredDisplay() {
+// 	int i = 0;
+// 	const byte bufferlen = 8;
+// 	char* buffer = (char*)calloc(bufferlen, sizeof(char));
+// 	unsigned long int colorLen;
+// 	while (i < SCREEN_SIZE) {
+// 		if(displayBuffer[i] == '#' && displayBuffer[i + bufferlen + 3] == '#') { 
+// 			//test if this logic works
+// 			*(unsigned long int*)(buffer) = *(unsigned long int*)(displayBuffer + i + 3);
+// 			i += bufferlen + 3;
+// 			//test if atoi is going to do away with the first zero digits.
+// 			colorLen = (unsigned long int)atoi(buffer);
+// 			/*
+				
+// 				check for the first and second chars and set up a switch-case logic for printing out
+// 				all characters of such color according to colorLen.
+// 			*/
+// 		}
+// 		i++;
+// 	}
+// }
 static void ZeroCachedObject(Object* object) {
 	object->id = 0;
 	object->skeleton.canva = NULL;

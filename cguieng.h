@@ -30,9 +30,10 @@
 #define CURSOR_SWITCH printf("\e[?25l");
 #define MAX_OBJLIST_SIZE 256
 #define MAX_OBJSIZE 14280
-#define WIDTH 238
-#define HIGHT 60
-#define SCREEN_SIZE 14280
+#define WIDTH width
+#define HIGHT hight
+#define SCREEN_SIZE screen_size
+#define DISPLAY_BUFFER_LEN displayBufferLen
 #define EXIT exit_status = 0;
 #define SET_COLORSTATE_ON colored_state = 0;
 #define SET_COLORSTATE_ON colored_state = 1;
@@ -42,14 +43,25 @@
                             fprintf(stderr,"\nERROR: Invalid refresh rate value. Can't be equal or less than 0.\n");   \
                             exit(EXIT_FAILURE);                              \
                             }                           \
-                            defaut_refresh_rate = a;
+                            defaut_refresh_rate = a;            
+
+extern char* displayBuffer;
+static short width = 238;
+static short hight = 60;
+static short screen_size = 14280;
+static short displayBufferLen = 14280;
+static byte defaut_refresh_rate = 15;
+static byte exit_status = 1;
+static byte colored_state = 1;
 
 #define DISPLAY_ON   int main(int argc, char** argv) {     \
                             CURSOR_SWITCH                      \
                             SetTerminalSTDINBlkSt(ENABLE);
 
-#define __START                displayBuffer	        \
-			                            = (char*)malloc(sizeof(char) * SCREEN_SIZE);      \
+#define __START             if(COLOR_STATE == ENABLE)          \
+                                DISPLAY_BUFFER_LEN *= 8;           \   
+                            displayBuffer	        \
+			                            = (char*)malloc(sizeof(char) * DISPLAY_BUFFER_LEN);      \
                                     while(exit_status) {                  \
                                  
 #define __END           UpdateDisplay();            \
@@ -58,20 +70,18 @@
 #define DISPLAY_OFF        DestroyAll();                \
                        SetTerminalSTDINBlkSt(DISABLE);        \
                         return 0;  }
-extern char* displayBuffer;
-static byte defaut_refresh_rate = 15;
-static byte exit_status = 1;
-static byte colored_state = 1;
 
 typedef struct FlagsField {
     byte cached : 1;
     byte modified_state : 1;
+    byte colored: 1;
 } flags_t;
 
 typedef struct BaseObject {
     char* canva;
     word width;
     word hight;
+    byte* colorPath;
 } object_t;
 typedef struct StObject {
     byte posi_x;
@@ -91,7 +101,7 @@ extern void Center(Object* object);
 extern void DestroyAll();
 extern int DestroyObject(struct SqrObject** object);
 extern char Key();
-extern void LoadCanva(object_t skeleton, const char* __PATH);
+extern void LoadCanvaFromFile(Object* object, const char* __PATH);
 extern struct SqrObject* NewObject(int width, int hight);
 extern void SetTerminalSTDINBlkSt(byte state);
 extern void SetObject(struct SqrObject* object);
