@@ -127,9 +127,6 @@ void LoadCanvaFromFile(Object* object, const char* __PATH) {
 	FILE* fp;
 	short MAX_SIZE = object->skeleton.width + 2;
 	char buffer[MAX_SIZE];
-	if(COLOR_STATE == ENABLE && object->state.flags.colored == ENABLE) {
-		
-	}
 	if((fp = fopen(__PATH, "r")) == NULL) {
 		fprintf(stderr, "Error opening file: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
@@ -151,6 +148,8 @@ Object* NewObject(int width, int hight) {
 		 	return NULL;
 
 	Object* new_object = (Object*)malloc(sizeof(Object));
+	if(COLOR_STATE == ENABLE)
+		new_object->skeleton.colorPath = (byte*)calloc((width * hight) * sizeof(unsigned int), sizeof(byte));	
 	new_object->skeleton.canva = (char*)malloc(sizeof(char) * width * hight);
 	new_object->skeleton.width = width;
 	new_object->skeleton.hight = hight;
@@ -220,11 +219,47 @@ void UpdateDisplay() {
 static void AddToList(Object* object) {
 	objectlist[objectlistCount - 1] = object;
 }
+#define PADDING + sizeof(unsigned short) * 2
+//UNTESTED
 static void BuffObj(Object* object) {
+	if(COLOR_STATE == ENABLE) {
+		int objectIndex = 0;
+		int	start = object->state.posi_x + object->state.posi_y * WIDTH + PADDING, 
+			old_start = objectCache[object->state.cachedAt].state.posi_x + objectCache[object->state.cachedAt].state.posi_y * WIDTH + PADDING;
+
+		for (size_t i = 0; i < object->skeleton.hight; i++) {
+			for (size_t j = 0; j < object->skeleton.width + 2; j++) {
+				if(i == 0 && j == 0)
+					*(unsigned short*)(displayBuffer + old_start + j - sizeof(unsigned short)) = *(unsigned short*)"  ";
+				if(i == object->skeleton.hight - 1 && j == object->skeleton.width - 1)
+					*(unsigned short*)(displayBuffer + old_start + j + 1) = *(unsigned short*)"  ";
+
+				displayBuffer[old_start + j] = ' ';
+			}
+			old_start += WIDTH;
+		}
+		for (size_t i = 0; i < object->skeleton.hight; i++) {
+			for (size_t j = 0; j < object->skeleton.width; j++) {
+				if(i == 0 && j == 0)
+					*(unsigned short*)(displayBuffer + start + j - sizeof(unsigned short)) = *(unsigned short*)(((object->id + 0x30) << 8) + 0x23); // Sets #<id> to the first two bytes of the string
+				if(i == object->skeleton.hight - 1 && j == object->skeleton.width - 1)
+					*(unsigned short*)(displayBuffer + start + j + 1) = *(unsigned short*)((0x23 << 8) + (object->id + 0x30));	// Sets <id># to the last two bytes of the string.
+
+				displayBuffer[start + j] = object->skeleton.canva[objectIndex];
+				objectIndex++;
+			}
+			start += WIDTH;
+		}
+		objectCache[object->state.cachedAt].state.posi_x = object->state.posi_x;
+		objectCache[object->state.cachedAt].state.posi_y = object->state.posi_y;
+		objectCache[object->state.cachedAt].skeleton.hight = object->skeleton.hight;
+		objectCache[object->state.cachedAt].skeleton.width = object->skeleton.width;
+
+		return;
+	}
 	int objectIndex = 0;
 	int	start = object->state.posi_x + object->state.posi_y * WIDTH,
 		old_start = objectCache[object->state.cachedAt].state.posi_x + objectCache[object->state.cachedAt].state.posi_y * WIDTH;
-	
 	for (size_t i = 0; i < object->skeleton.hight; i++) {
 		for (size_t j = 0; j < object->skeleton.width + 2; j++) {
 			displayBuffer[old_start + j] = ' ';
@@ -263,27 +298,15 @@ static void DefragmentCache(int cachedAt) {
 		objectCache[i].state.cachedAt -= 1;
 	}	
 }
-// static void printColoredDisplay() {
-// 	int i = 0;
-// 	const byte bufferlen = 8;
-// 	char* buffer = (char*)calloc(bufferlen, sizeof(char));
-// 	unsigned long int colorLen;
-// 	while (i < SCREEN_SIZE) {
-// 		if(displayBuffer[i] == '#' && displayBuffer[i + bufferlen + 3] == '#') { 
-// 			//test if this logic works
-// 			*(unsigned long int*)(buffer) = *(unsigned long int*)(displayBuffer + i + 3);
-// 			i += bufferlen + 3;
-// 			//test if atoi is going to do away with the first zero digits.
-// 			colorLen = (unsigned long int)atoi(buffer);
-// 			/*
-				
-// 				check for the first and second chars and set up a switch-case logic for printing out
-// 				all characters of such color according to colorLen.
-// 			*/
-// 		}
-// 		i++;
-// 	}
-// }
+static void printColoredDisplay() {
+	int i = 0, obj_id;
+	while (i < SCREEN_SIZE) {
+		if(displayBuffer[i] == '#' && (obj_id = atoi(displayBuffer[i + 1])) != 0) { 
+			
+		}
+		i++;
+	}
+}
 static void ZeroCachedObject(Object* object) {
 	object->id = 0;
 	object->skeleton.canva = NULL;
