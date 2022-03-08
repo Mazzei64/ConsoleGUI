@@ -150,7 +150,7 @@ Object* NewObject(int width, int hight) {
 
 	Object* new_object = (Object*)malloc(sizeof(Object));
 	if(COLOR_STATE == ENABLE)
-		new_object->skeleton.colorPath = (byte*)calloc((width * hight) * sizeof(unsigned int), sizeof(byte));	
+		new_object->skeleton.colorPath = (colorPath_t*)calloc(width * hight, sizeof(colorPath_t));	
 	new_object->skeleton.canva = (char*)malloc(sizeof(char) * width * hight);
 	new_object->skeleton.width = width;
 	new_object->skeleton.hight = hight;
@@ -298,13 +298,18 @@ static void DefragmentCache(int cachedAt) {
 static void printColoredDisplay() {
 	int i = 0;
 	unsigned short obj_id;
-	while (i < SCREEN_SIZE) {
+	while (i < DISPLAY_BUFFER_LEN) {
 		if(*(unsigned int*)(displayBuffer + i) & COLOR_TAG_MASK == COLOR_TAG_MASK) {
-			obj_id = *(unsigned short*)(displayBuffer + i); // --> untested.
+			obj_id = *(unsigned short*)(displayBuffer + i + sizeof(unsigned short)) - 1;
 			/*
 					At this point you've managed to decode the buffer for the objects id,
 				now it is time for you to read the orientations the object provides in order to color it.
+
+				The colorPath of an object is organized in the following order: [<foreground or background>, <color byte(RGB)>, Start-Canva-Index, End-Canva-Index, ...].
+				It is a contiguous 4 byte divisable array where each end every 4 bytes index has to contain this information structure if not zero.
 			*/
+		
+			objectlist[obj_id]->skeleton.colorPath;
 		}
 		i++;
 	}

@@ -78,12 +78,17 @@ typedef struct FlagsField {
     byte modified_state : 1;
     byte colored: 1;
 } flags_t;
-
+typedef struct ColorPathStrct {
+    byte face;
+    byte RGB;
+    byte canva_start;
+    byte canva_end;
+} colorPath_t;
 typedef struct BaseObject {
     char* canva;
     word width;
     word hight;
-    byte* colorPath;
+    colorPath_t* colorPath;
 } object_t;
 typedef struct StObject {
     byte posi_x;
@@ -96,7 +101,6 @@ typedef struct SqrObject {
     object_t skeleton;
     stobject_t state;
 } Object;
-
 extern object_t AppendList(Object** objectlist, byte listlen);
 extern object_t AppendRight(object_t obj1, object_t obj2, int pad);
 extern void Center(Object* object);
