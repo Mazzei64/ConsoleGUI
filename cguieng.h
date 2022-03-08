@@ -28,7 +28,8 @@
 #define clrscr() printf("\e[1;1H\e[2J")
 #define gotoxy(x,y) printf("\033[%d;%dH", (y), (x))
 #define CURSOR_SWITCH printf("\e[?25l");
-#define MAX_OBJLIST_SIZE 256
+#define COLOR_TAG_MASK 0x23230000
+#define MAX_OBJLIST_SIZE 65535
 #define MAX_OBJSIZE 14280
 #define WIDTH width
 #define HIGHT hight
@@ -60,7 +61,7 @@ static byte colored_state = 1;
 
 #define __START             if(COLOR_STATE == ENABLE)          \
                             displayBuffer	        \
-			                            = (char*)calloc(DISPLAY_BUFFER_LEN * 5 + sizeof(unsigned short), sizeof(char));      \
+			                            = (char*)calloc(DISPLAY_BUFFER_LEN * (sizeof(unsigned int) + 1), sizeof(char));      \
                             else                                \
                                 displayBuffer	        \
 			                            = (char*)calloc(DISPLAY_BUFFER_LEN, sizeof(char));      \

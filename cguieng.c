@@ -4,6 +4,7 @@ static void AddToList(Object* object);
 static void BuffObj(Object* object);
 static void DefragmentList(int currentId);
 static void DefragmentCache(int cachedAt);
+static char* itoa(int __val, int base);
 static void printColoredDisplay();
 static void ZeroCachedObject(Object* object);
 void DestroyAll();
@@ -219,31 +220,27 @@ void UpdateDisplay() {
 static void AddToList(Object* object) {
 	objectlist[objectlistCount - 1] = object;
 }
-#define PADDING + sizeof(unsigned short) * 2
 //UNTESTED
 static void BuffObj(Object* object) {
 	if(COLOR_STATE == ENABLE) {
+		const unsigned int BLANK_TAG = 0x20202020;
 		int objectIndex = 0;
-		int	start = object->state.posi_x + object->state.posi_y * WIDTH + PADDING, 
-			old_start = objectCache[object->state.cachedAt].state.posi_x + objectCache[object->state.cachedAt].state.posi_y * WIDTH + PADDING;
+		int	start = object->state.posi_x + object->state.posi_y * WIDTH + sizeof(unsigned int), 
+			old_start = objectCache[object->state.cachedAt].state.posi_x + objectCache[object->state.cachedAt].state.posi_y * WIDTH + sizeof(unsigned int);
 
 		for (size_t i = 0; i < object->skeleton.hight; i++) {
 			for (size_t j = 0; j < object->skeleton.width + 2; j++) {
 				if(i == 0 && j == 0)
-					*(unsigned short*)(displayBuffer + old_start + j - sizeof(unsigned short)) = *(unsigned short*)"  ";
-				if(i == object->skeleton.hight - 1 && j == object->skeleton.width - 1)
-					*(unsigned short*)(displayBuffer + old_start + j + 1) = *(unsigned short*)"  ";
+					*(unsigned int*)(displayBuffer + old_start + j - sizeof(unsigned int)) = *(unsigned int*)BLANK_TAG;
 
-				displayBuffer[old_start + j] = ' ';
+				displayBuffer[old_start + j] = 0x20;
 			}
 			old_start += WIDTH;
 		}
 		for (size_t i = 0; i < object->skeleton.hight; i++) {
 			for (size_t j = 0; j < object->skeleton.width; j++) {
 				if(i == 0 && j == 0)
-					*(unsigned short*)(displayBuffer + start + j - sizeof(unsigned short)) = *(unsigned short*)(((object->id + 0x30) << 8) + 0x23); // Sets #<id> to the first two bytes of the string
-				if(i == object->skeleton.hight - 1 && j == object->skeleton.width - 1)
-					*(unsigned short*)(displayBuffer + start + j + 1) = *(unsigned short*)((0x23 << 8) + (object->id + 0x30));	// Sets <id># to the last two bytes of the string.
+					*(unsigned int*)(displayBuffer + start + j - sizeof(unsigned int)) = *(unsigned int*)(object->id + COLOR_TAG_MASK); // Sets ##<id> to the first two bytes of the string
 
 				displayBuffer[start + j] = object->skeleton.canva[objectIndex];
 				objectIndex++;
@@ -301,8 +298,9 @@ static void DefragmentCache(int cachedAt) {
 static void printColoredDisplay() {
 	int i = 0, obj_id;
 	while (i < SCREEN_SIZE) {
-		if(displayBuffer[i] == '#' && (obj_id = atoi(displayBuffer[i + 1])) != 0) { 
-			
+		if(displayBuffer[i] == '#' && (obj_id = atoi(displayBuffer[i + 1])) > 0) {
+			obj_id--; 
+				
 		}
 		i++;
 	}
