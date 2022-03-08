@@ -28,19 +28,20 @@
 #define clrscr() printf("\e[1;1H\e[2J")
 #define gotoxy(x,y) printf("\033[%d;%dH", (y), (x))
 #define CURSOR_SWITCH printf("\e[?25l");
-#define COLOR_TAG_MASK 0x23230000
+#define COLOR_TAG_MASK 0x00002323 //"##\0\0" --> little endian.
 #define MAX_OBJLIST_SIZE 65535
 #define MAX_OBJSIZE 14280
 #define WIDTH width
 #define HIGHT hight
 #define SCREEN_SIZE screen_size
 #define DISPLAY_BUFFER_LEN displayBufferLen
-#define EXIT exit_status = 0;
+#define RUNNING running
+#define EXIT running = 0;
 #define SET_COLORSTATE_ON colored_state = 0;
 #define SET_COLORSTATE_ON colored_state = 1;
 #define COLOR_STATE colored_state
 #define REFRESH_RATE defaut_refresh_rate
-#define SET_REFRESH_RATE(a)     if(a<0) {   \
+#define SET_REFRESH_RATE(a)     if(a<=0) {   \
                             fprintf(stderr,"\nERROR: Invalid refresh rate value. Can't be equal or less than 0.\n");   \
                             exit(EXIT_FAILURE);                              \
                             }                           \
@@ -52,7 +53,7 @@ static short hight = 60;
 static short screen_size = 14280;
 static short displayBufferLen = 14280;
 static byte defaut_refresh_rate = 15;
-static byte exit_status = 1;
+static byte running = 1;
 static byte colored_state = 1;
 
 #define DISPLAY_ON   int main(int argc, char** argv) {     \
@@ -60,12 +61,10 @@ static byte colored_state = 1;
                             SetTerminalSTDINBlkSt(ENABLE);
 
 #define __START             if(COLOR_STATE == ENABLE)          \
+                                DISPLAY_BUFFER_LEN *= (sizeof(unsigned int) + 1)        \
                             displayBuffer	        \
-			                            = (char*)calloc(DISPLAY_BUFFER_LEN * (sizeof(unsigned int) + 1), sizeof(char));      \
-                            else                                \
-                                displayBuffer	        \
-			                            = (char*)calloc(DISPLAY_BUFFER_LEN, sizeof(char));      \
-                                    while(exit_status) {                  \
+                                        = (char*)calloc(DISPLAY_BUFFER_LEN, sizeof(char));      \
+                                while(RUNNING) {                  \
                                  
 #define __END           UpdateDisplay();            \
                                               }           

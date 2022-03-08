@@ -163,16 +163,16 @@ Object* NewObject(int width, int hight) {
 }
 void SetObject(Object* object) {
 	static byte begin = DISABLE;
-	if(begin == DISABLE) {
-		for (size_t i = 0; i < SCREEN_SIZE; i++) {
-			displayBuffer[i] = ' ';
-		}
-		begin = ENABLE;
-	}
 	if(displayBuffer == NULL) {
 		fprintf(stderr, "\nERROR: Display hasn't been created.\n");
 		fprintf(stderr, "Try creating it by using the cguieng's macro \"DISPLAY_ON\"\n");
 		exit(EXIT_FAILURE);
+	}
+	if(begin == DISABLE) {
+		for (size_t i = 0; i < DISPLAY_BUFFER_LEN; i++) {
+			displayBuffer[i] = ' ';
+		}
+		begin = ENABLE;
 	}
 	if(object->state.flags.cached == DISABLE) {
 		objectCache[objectCacheCount] = *object;
@@ -240,7 +240,7 @@ static void BuffObj(Object* object) {
 		for (size_t i = 0; i < object->skeleton.hight; i++) {
 			for (size_t j = 0; j < object->skeleton.width; j++) {
 				if(i == 0 && j == 0)
-					*(unsigned int*)(displayBuffer + start + j - sizeof(unsigned int)) = *(unsigned int*)(object->id + COLOR_TAG_MASK); // Sets ##<id> to the first two bytes of the string
+					*(unsigned int*)(displayBuffer + start + j - sizeof(unsigned int)) = *(unsigned int*)((object->id << 16) + COLOR_TAG_MASK);
 
 				displayBuffer[start + j] = object->skeleton.canva[objectIndex];
 				objectIndex++;
@@ -296,11 +296,15 @@ static void DefragmentCache(int cachedAt) {
 	}	
 }
 static void printColoredDisplay() {
-	int i = 0, obj_id;
+	int i = 0;
+	unsigned short obj_id;
 	while (i < SCREEN_SIZE) {
-		if(displayBuffer[i] == '#' && (obj_id = atoi(displayBuffer[i + 1])) > 0) {
-			obj_id--; 
-				
+		if(*(unsigned int*)(displayBuffer + i) & COLOR_TAG_MASK == COLOR_TAG_MASK) {
+			obj_id = *(unsigned short*)(displayBuffer + i); // --> untested.
+			/*
+					At this point you've managed to decode the buffer for the objects id,
+				now it is time for you to read the orientations the object provides in order to color it.
+			*/
 		}
 		i++;
 	}
