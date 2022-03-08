@@ -81,8 +81,8 @@ typedef struct FlagsField {
 typedef struct ColorPathStrct {
     byte face;
     byte RGB;
-    byte canva_start;
-    byte canva_end;
+    short canva_start;
+    short canva_end;
 } colorPath_t;
 typedef struct BaseObject {
     char* canva;
