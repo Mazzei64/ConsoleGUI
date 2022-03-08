@@ -61,7 +61,7 @@ static byte colored_state = 1;
                             SetTerminalSTDINBlkSt(ENABLE);
 
 #define __START             if(COLOR_STATE == ENABLE)          \
-                                DISPLAY_BUFFER_LEN *= (sizeof(unsigned int) + 1)        \
+                                DISPLAY_BUFFER_LEN *= (sizeof(unsigned int) + 1);        \
                             displayBuffer	        \
                                         = (char*)calloc(DISPLAY_BUFFER_LEN, sizeof(char));      \
                                 while(RUNNING) {                  \
