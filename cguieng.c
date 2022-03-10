@@ -10,7 +10,7 @@ static void ZeroCachedObject(Object* object);
 void DestroyAll();
 
 static Object** objectlist;
-static int objectlistCount = 0;
+static word objectlistCount = 0;
 static Object objectCache [MAX_OBJLIST_SIZE];
 static short objectCacheCount = 0;
 
@@ -149,8 +149,10 @@ Object* NewObject(int width, int hight) {
 		 	return NULL;
 
 	Object* new_object = (Object*)malloc(sizeof(Object));
-	if(COLOR_STATE == ENABLE)
-		new_object->skeleton.colorPath = (colorPath_t*)calloc(width * hight, sizeof(colorPath_t));	
+	if(COLOR_STATE == ENABLE) {
+		new_object->skeleton.colorPathList = (colorPath_t*)calloc(width * hight, sizeof(colorPath_t));
+		new_object->skeleton.colorPathCount = 0;
+	}
 	new_object->skeleton.canva = (char*)malloc(sizeof(char) * width * hight);
 	new_object->skeleton.width = width;
 	new_object->skeleton.hight = hight;
@@ -161,12 +163,26 @@ Object* NewObject(int width, int hight) {
 
 	return new_object;
 }
+int PaintObject(Object* object, byte RGB) {
+	byte some = COLOR_STATE;
+	if(object == NULL || RGB > 255 || RGB < 0 || COLOR_STATE == DISABLE) {
+		return 0;
+	}
+	colorPath_t clockColorPath;
+    clockColorPath.canva_start = 1;
+    clockColorPath.canva_end = object->skeleton.hight * object->skeleton.width;
+    clockColorPath.RGB = RED;
+    object->skeleton.colorPathList[0] = clockColorPath;
+    object->skeleton.colorPathCount++;
+	return 1;
+}
 void SetObject(Object* object) {
 	static byte begin = DISABLE;
 	if(displayBuffer == NULL) {
 		fprintf(stderr, "\nERROR: Display hasn't been created.\n");
 		fprintf(stderr, "Try creating it by using the cguieng's macro \"DISPLAY_ON\"\n");
-		exit(EXIT_FAILURE);
+		EXIT
+		return;
 	}
 	if(begin == DISABLE) {
 		for (size_t i = 0; i < DISPLAY_BUFFER_LEN; i++) {
@@ -209,7 +225,7 @@ void UpdateDisplay() {
 		printColoredDisplay();
 	}
 	while (i < SCREEN_SIZE) {
-		printf("%c", displayBuffer[i]);
+		PrintToScreen(i);
 		i++;
 	}
 	fflush(stdout);
@@ -225,13 +241,14 @@ static void BuffObj(Object* object) {
 	if(COLOR_STATE == ENABLE) {
 		const unsigned int BLANK_TAG = 0x20202020;
 		int objectIndex = 0;
+		int bufferlen_debug = DISPLAY_BUFFER_LEN;
 		int	start = object->state.posi_x + object->state.posi_y * WIDTH + sizeof(unsigned int), 
 			old_start = objectCache[object->state.cachedAt].state.posi_x + objectCache[object->state.cachedAt].state.posi_y * WIDTH + sizeof(unsigned int);
 
 		for (size_t i = 0; i < object->skeleton.hight; i++) {
 			for (size_t j = 0; j < object->skeleton.width + 2; j++) {
 				if(i == 0 && j == 0)
-					*(unsigned int*)(displayBuffer + old_start + j - sizeof(unsigned int)) = *(unsigned int*)BLANK_TAG;
+					*(unsigned int*)(displayBuffer + old_start + j - sizeof(unsigned int)) = BLANK_TAG;
 
 				displayBuffer[old_start + j] = 0x20;
 			}
@@ -239,12 +256,15 @@ static void BuffObj(Object* object) {
 		}
 		for (size_t i = 0; i < object->skeleton.hight; i++) {
 			for (size_t j = 0; j < object->skeleton.width; j++) {
-				if(i == 0 && j == 0)
-					*(unsigned int*)(displayBuffer + start + j - sizeof(unsigned int)) = *(unsigned int*)((object->id << 16) + COLOR_TAG_MASK);
-
+				if(i == 0 && j == 0) {
+					unsigned int debug = (unsigned int)((object->id << 16) + COLOR_TAG_MASK);
+					*(unsigned int*)(displayBuffer + start + j - sizeof(unsigned int)) = (unsigned int)((object->id << 16) + COLOR_TAG_MASK);
+					unsigned int debug_2 = *(unsigned int*)(displayBuffer + start + j - sizeof(unsigned int));
+				}
 				displayBuffer[start + j] = object->skeleton.canva[objectIndex];
 				objectIndex++;
 			}
+			// Wrong... new buffer is 5 times the area of the last one...
 			start += WIDTH;
 		}
 		objectCache[object->state.cachedAt].state.posi_x = object->state.posi_x;
@@ -295,25 +315,83 @@ static void DefragmentCache(int cachedAt) {
 		objectCache[i].state.cachedAt -= 1;
 	}	
 }
+/*
+	I think it would be best and more efficient if you created an encoded display buffer for reference the actual buffer... this isn't going well...
+*/
 static void printColoredDisplay() {
-	int i = 0;
+	int bufferIndex = sizeof(unsigned int),printed_count = 0;
 	unsigned short obj_id;
-	while (i < DISPLAY_BUFFER_LEN) {
-		if(*(unsigned int*)(displayBuffer + i) & COLOR_TAG_MASK == COLOR_TAG_MASK) {
-			obj_id = *(unsigned short*)(displayBuffer + i + sizeof(unsigned short)) - 1;
-			/*
-					At this point you've managed to decode the buffer for the objects id,
-				now it is time for you to read the orientations the object provides in order to color it.
+	while(printed_count < SCREEN_SIZE) {
+		/*
+			This checks if the sequence of 4 bytes up the memory, from where printed_count is currently indexing,
+			is maskable by the COLOR_TAG_MASK. If it is, means that we've found a section that is related to an object
+			that needs to be printed.
 
-				The colorPath of an object is organized in the following order: [<foreground or background>, <color byte(RGB)>, Start-Canva-Index, End-Canva-Index, ...].
-				It is a contiguous 4 byte divisable array where each end every 4 bytes index has to contain this information structure if not zero.
+			Next step: now we need to parse the object's ID number, from the higher-order word from this 4 byte section
+			of memory and check if there in fact is an corresponding object in the objectList with the same ID word value.
+		*/
+		if(*(unsigned int*)(displayBuffer + bufferIndex) & COLOR_TAG_MASK == COLOR_TAG_MASK) {
+			unsigned int debug = *(unsigned int*)(displayBuffer + bufferIndex);
+			// Fetches the decoded word value ID from memory.
+			obj_id = *(unsigned short*)(displayBuffer + bufferIndex + sizeof(unsigned short));
+			bufferIndex += sizeof(unsigned int);
+			/*
+				Checks if there is an object that has this ID value inside the list.
+
+				Next step: Now we need to get the objects represented by that ID value and make the required checks to it:
+				first we see if it is colored enabled. If it is not, we don't need to go through the painting routine, we might
+				as well skip it and raw print it to the screen. In the other case, we need to run it through the painting routine and
+				make sure it is printed and painted according to its color path structure that needs to be decoded.
 			*/
-		
-			objectlist[obj_id]->skeleton.colorPath;
+			if(objectlistCount >= obj_id) {
+				obj_id--;							//decrements obj_id in order to facilitated indexing the list.
+				if(objectlist[obj_id]->state.flags.colored == ENABLE && objectlist[obj_id]->skeleton.colorPathCount != 0) {			// Checks if it the object is supposed to be colored or not.
+					/*
+						Next step: Now after going through these series of basic checks, we need to build the routine that will decode the object's
+						color path and thus set the printing order for coloring each character in proper order.
+					*/
+				#define currentColorPath	objectlist[obj_id]->skeleton.colorPathList[color_t_count]
+					/*
+						Logic for printing colorful chars
+					*/
+					unsigned short color_t_count = 0;
+					unsigned int interation = 0;
+					// while interations don't reach the length of the object, run it.
+					while(interation < (objectlist[obj_id]->skeleton.width * objectlist[obj_id]->skeleton.hight)) {
+						/*
+							Check if the start of this colorPathST is the same as where we are at now running through the object's body.
+							If it is true and the size of the color path list hasn't reached its end, look at the color and paint it.
+						*/
+						if(currentColorPath.canva_start == (interation + 1) && objectlist[obj_id]->skeleton.colorPathCount <= color_t_count + 1) {
+							PAINT_ANSI256(currentColorPath.RGB);
+							for (int j = 0; j < currentColorPath.canva_end - currentColorPath.canva_start; j++) {
+								PrintToScreen(printed_count);
+								printed_count++;
+								bufferIndex++;
+								interation++;
+							}
+							color_t_count++;
+							continue;
+						}
+						/*
+							While we don't reach the start of the nest colorpath, continue printing the object with its standard color.
+						*/
+						PAINT_ANSI256(STANDARD_WHITE);
+						PrintToScreen(printed_count);
+						printed_count++;
+						interation++;
+					}
+				}
+			}
+			PAINT_ANSI256(STANDARD_WHITE);
+			continue;
 		}
-		i++;
+		PrintToScreen(printed_count);
+		printed_count++;
+		bufferIndex++;
 	}
 }
+
 static void ZeroCachedObject(Object* object) {
 	object->id = 0;
 	object->skeleton.canva = NULL;
