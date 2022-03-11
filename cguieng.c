@@ -16,32 +16,69 @@ static short objectCacheCount = 0;
 
 char* displayBuffer;
 
-object_t AppendList(Object** objlist, const byte listlen) {
+object_t AppendList(Object** objlist, const byte listlen) { //AppendGroup
+	PAINT_ANSI256(MAGENTA);
+    printf("Address inside AppendList: %p\n", objectlist[11]->skeleton.colorPathList);
+	object_t oldstate;
+	oldstate.canva = NULL;
 	char* oldcanva = NULL;
 	object_t objbuff = (objlist[0])->skeleton;
 	
-	for (size_t i = 1; i < listlen; i++) {
-		if(i > 1)
-			oldcanva = objbuff.canva;
+	PAINT_ANSI256(MAGENTA);
+    printf("Address before calling AppendRight in AppendList: %p\n", objectlist[11]->skeleton.colorPathList);
+	for (unsigned int i = 1; i < listlen; i++) {
+		if(i > 1) {
+			oldstate.canva = objbuff.canva;
+		}
 
-		objbuff = AppendRight(objbuff, (objlist[i])->skeleton, 0);
-
-		if(oldcanva != NULL)
-			free(oldcanva);
+		objbuff = AppendRight(objbuff, objlist[i]->skeleton, 0);
+		
+		if(oldstate.canva != NULL) {
+			free(oldstate.canva);
+		}
 	}
+	PAINT_ANSI256(MAGENTA);
+    printf("Address after having called AppendRight in AppendList: %p\n", objectlist[11]->skeleton.colorPathList);
+	// The return of this new object_t is what is causing the problem
 	return objbuff;
 }
+static int JoinColorPaths(object_t* obj1, object_t* obj2) {
+	if(COLOR_STATE == DISABLE)
+		return 0;
+	if(obj1->colorPathList == NULL || obj2->colorPathList == NULL)
+		return -1;
+	if(obj1->colorPathCount == 0 && obj2->colorPathCount == 0)
+		return -2;
+	if(obj2->colorPathCount == 0)
+		return -3;
+	if(obj1->colorPathCount == 0) {
+		for (unsigned short i = 0; i < obj2->colorPathCount; i++) {
+			obj1->colorPathList[i] = obj2->colorPathList[i];
+		}
+		obj1->colorPathCount = obj2->colorPathCount;
+		return 2;
+	}
+	unsigned short obj1ColorPathCount = obj1->colorPathCount;
+	for (unsigned short i = 0; i < obj2->colorPathCount; i++) {
+		obj1->colorPathList[obj1ColorPathCount] = obj2->colorPathList[i];
+		obj1ColorPathCount++;
+	}
+	obj1->colorPathCount += obj2->colorPathCount;
+	return 1;
+}
+// TO REVISE!!!!
 object_t AppendRight(object_t obj1, object_t obj2, int pad) {
 	object_t skeleton;
-    short obj1count = 0, obj2count = 0, count = 0,
+    unsigned short obj1count = 0, obj2count = 0, count = 0,
 	len = (obj1.width * obj1.hight) + (obj2.width * obj2.hight);
-	char* result = (char*)malloc(sizeof(char) * len + 1);
-
+	char* canvaResult = (char*)malloc(sizeof(char) * len + 1);
+	
 	skeleton.width = obj1.width + obj2.width + pad;
 	skeleton.hight = obj1.hight >= obj2.hight ? obj1.hight : obj2.hight;
-
+	skeleton.colorPathList = (colorPath_t*)malloc(sizeof(colorPath_t) * skeleton.hight * skeleton.width);
+	skeleton.colorPathCount = 0;
     while (count < len) {
-        result[count] = obj1.canva[obj1count];
+        canvaResult[count] = obj1.canva[obj1count];
         count++;
         if((obj1count + 1) % obj1.width == 0 && count >= 4) {
             for (size_t j = 0; j < obj2.width; j++) {
@@ -49,7 +86,7 @@ object_t AppendRight(object_t obj1, object_t obj2, int pad) {
                     count++;
                     break;
                 }
-                result[count] = obj2.canva[obj2count];
+                canvaResult[count] = obj2.canva[obj2count];
                 obj2count++;
                 count++;
             }
@@ -58,7 +95,15 @@ object_t AppendRight(object_t obj1, object_t obj2, int pad) {
         }
         obj1count++;
     }
-	skeleton.canva = result;
+	if(JoinColorPaths(&skeleton, &obj1) == -1) {
+		fprintf(stderr,"ERROR: NULL reference exception -- Reference to the object\'s colorPathList is non-existent in function: %s\n", __func__);
+		EXIT;
+	}
+	if(JoinColorPaths(&skeleton, &obj2) == -1) {
+		fprintf(stderr,"ERROR: NULL reference exception -- Reference to the object\'s colorPathList is non-existent in function: %s\n", __func__);
+		EXIT;
+	}
+	skeleton.canva = canvaResult;
     return skeleton;
 }
 void Center(Object* object) {
@@ -149,18 +194,17 @@ Object* NewObject(int width, int hight) {
 		 	return NULL;
 
 	Object* new_object = (Object*)malloc(sizeof(Object));
+	new_object->skeleton.canva = (char*)malloc(sizeof(char) * width * hight);
 	if(COLOR_STATE == ENABLE) {
 		new_object->skeleton.colorPathList = (colorPath_t*)calloc(width * hight, sizeof(colorPath_t));
 		new_object->skeleton.colorPathCount = 0;
 	}
-	new_object->skeleton.canva = (char*)malloc(sizeof(char) * width * hight);
 	new_object->skeleton.width = width;
 	new_object->skeleton.hight = hight;
-	new_object->id = objectlistCount + 1;
 	new_object->state.flags.modified_state = DISABLE;
 	objectlist[objectlistCount] = new_object;
 	objectlistCount++;
-
+	new_object->id = objectlistCount;
 	return new_object;
 }
 int PaintObject(Object* object, byte RGB) {
@@ -168,15 +212,23 @@ int PaintObject(Object* object, byte RGB) {
 	if(object == NULL || RGB > 255 || RGB < 0 || COLOR_STATE == DISABLE) {
 		return 0;
 	}
+
 	colorPath_t clockColorPath;
     clockColorPath.canva_start = 1;
     clockColorPath.canva_end = object->skeleton.hight * object->skeleton.width;
     clockColorPath.RGB = RED;
     object->skeleton.colorPathList[0] = clockColorPath;
+	object->state.flags.colored = ENABLE;
     object->skeleton.colorPathCount++;
+	printf("Color Path Address at PaintObject: %p\n", object->skeleton.colorPathList);
+	fflush(stdout);
 	return 1;
 }
 void SetObject(Object* object) {
+	printf("Adress in SetObject: %p\n", objectlist[11]->skeleton.colorPathList);
+	if(object->skeleton.width == objectlist[9]->skeleton.hight) {
+		printf("Same Object in SetObject.\n");
+	}
 	static byte begin = DISABLE;
 	if(displayBuffer == NULL) {
 		fprintf(stderr, "\nERROR: Display hasn't been created.\n");
@@ -219,9 +271,10 @@ void SetTerminalSTDINBlkSt(byte state) {
 }
 void UpdateDisplay() {
 	int i = 0;
-	gotoxy(0,0);
+	// gotoxy(0,0);
 	usleep(1000000 / REFRESH_RATE);
 	if(COLOR_STATE == ENABLE) {
+		printf("Adress before calling printColoredDisplay: %p\n", objectlist[11]->skeleton.colorPathList);
 		printColoredDisplay();
 	}
 	while (i < SCREEN_SIZE) {
@@ -238,29 +291,27 @@ static void AddToList(Object* object) {
 }
 //UNTESTED
 static void BuffObj(Object* object) {
+	printf("Adress in BuffObj: %p\n", objectlist[11]->skeleton.colorPathList);
+	int objectIndex = 0;
 	if(COLOR_STATE == ENABLE) {
-		const unsigned int BLANK_TAG = 0x20202020;
-		int objectIndex = 0;
+		const unsigned int BLANK_TAG = (unsigned int)0x20202020;
 		int bufferlen_debug = DISPLAY_BUFFER_LEN;
 		int	start = object->state.posi_x + object->state.posi_y * WIDTH + sizeof(unsigned int), 
 			old_start = objectCache[object->state.cachedAt].state.posi_x + objectCache[object->state.cachedAt].state.posi_y * WIDTH + sizeof(unsigned int);
 
-		for (size_t i = 0; i < object->skeleton.hight; i++) {
-			for (size_t j = 0; j < object->skeleton.width + 2; j++) {
-				if(i == 0 && j == 0)
-					*(unsigned int*)(displayBuffer + old_start + j - sizeof(unsigned int)) = BLANK_TAG;
+		*(unsigned int*)(displayBuffer + old_start - sizeof(unsigned int)) = BLANK_TAG;
 
+		for (size_t i = 0; i < object->skeleton.hight; i++) {
+			for (size_t j = 0; j < object->skeleton.width + sizeof(unsigned short); j++) {
 				displayBuffer[old_start + j] = 0x20;
 			}
 			old_start += WIDTH;
 		}
+
+		*(unsigned int*)(displayBuffer + start - sizeof(unsigned int)) = (unsigned int)((object->id << 16) + COLOR_TAG_MASK);
+
 		for (size_t i = 0; i < object->skeleton.hight; i++) {
 			for (size_t j = 0; j < object->skeleton.width; j++) {
-				if(i == 0 && j == 0) {
-					unsigned int debug = (unsigned int)((object->id << 16) + COLOR_TAG_MASK);
-					*(unsigned int*)(displayBuffer + start + j - sizeof(unsigned int)) = (unsigned int)((object->id << 16) + COLOR_TAG_MASK);
-					unsigned int debug_2 = *(unsigned int*)(displayBuffer + start + j - sizeof(unsigned int));
-				}
 				displayBuffer[start + j] = object->skeleton.canva[objectIndex];
 				objectIndex++;
 			}
@@ -274,7 +325,6 @@ static void BuffObj(Object* object) {
 
 		return;
 	}
-	int objectIndex = 0;
 	int	start = object->state.posi_x + object->state.posi_y * WIDTH,
 		old_start = objectCache[object->state.cachedAt].state.posi_x + objectCache[object->state.cachedAt].state.posi_y * WIDTH;
 	for (size_t i = 0; i < object->skeleton.hight; i++) {
@@ -322,50 +372,39 @@ static void printColoredDisplay() {
 	int bufferIndex = sizeof(unsigned int),printed_count = 0;
 	unsigned short obj_id;
 	while(printed_count < SCREEN_SIZE) {
-		/*
-			This checks if the sequence of 4 bytes up the memory, from where printed_count is currently indexing,
-			is maskable by the COLOR_TAG_MASK. If it is, means that we've found a section that is related to an object
-			that needs to be printed.
-
-			Next step: now we need to parse the object's ID number, from the higher-order word from this 4 byte section
-			of memory and check if there in fact is an corresponding object in the objectList with the same ID word value.
-		*/
+	
 		if(*(unsigned int*)(displayBuffer + bufferIndex) & COLOR_TAG_MASK == COLOR_TAG_MASK) {
 			unsigned int debug = *(unsigned int*)(displayBuffer + bufferIndex);
-			// Fetches the decoded word value ID from memory.
+
 			obj_id = *(unsigned short*)(displayBuffer + bufferIndex + sizeof(unsigned short));
 			bufferIndex += sizeof(unsigned int);
-			/*
-				Checks if there is an object that has this ID value inside the list.
-
-				Next step: Now we need to get the objects represented by that ID value and make the required checks to it:
-				first we see if it is colored enabled. If it is not, we don't need to go through the painting routine, we might
-				as well skip it and raw print it to the screen. In the other case, we need to run it through the painting routine and
-				make sure it is printed and painted according to its color path structure that needs to be decoded.
-			*/
+			
 			if(objectlistCount >= obj_id) {
-				obj_id--;							//decrements obj_id in order to facilitated indexing the list.
-				if(objectlist[obj_id]->state.flags.colored == ENABLE && objectlist[obj_id]->skeleton.colorPathCount != 0) {			// Checks if it the object is supposed to be colored or not.
-					/*
-						Next step: Now after going through these series of basic checks, we need to build the routine that will decode the object's
-						color path and thus set the printing order for coloring each character in proper order.
-					*/
+				obj_id -= 1;							
+				if(objectlist[obj_id]->state.flags.colored == ENABLE && objectlist[obj_id]->skeleton.colorPathCount != 0) {
+					
 				#define currentColorPath	objectlist[obj_id]->skeleton.colorPathList[color_t_count]
-					/*
-						Logic for printing colorful chars
-					*/
+					
+					
+					
 					unsigned short color_t_count = 0;
 					unsigned int interation = 0;
-					// while interations don't reach the length of the object, run it.
 					while(interation < (objectlist[obj_id]->skeleton.width * objectlist[obj_id]->skeleton.hight)) {
-						/*
-							Check if the start of this colorPathST is the same as where we are at now running through the object's body.
-							If it is true and the size of the color path list hasn't reached its end, look at the color and paint it.
-						*/
+						if(objectlist[obj_id]->skeleton.colorPathList != NULL) {
+							printf("path is not null\n");
+							printf("Decoded ID(obj_id): %d\n", obj_id);
+							printf("Objects ID by decoded ID: %d\n", objectlist[obj_id]->id);
+							printf("Objects Width by decoded ID: %d\n", objectlist[obj_id]->skeleton.width);
+							colorPath_t* colorPathAddrs = objectlist[obj_id]->skeleton.colorPathList;
+							printf("Color Path Address: %p\n", colorPathAddrs);
+							colorPath_t currentPath = *(objectlist[obj_id]->skeleton.colorPathList);
+						}
+						int debug = currentColorPath.canva_start;	// Segmentation fault
+						int debug_2 = objectlist[obj_id]->skeleton.colorPathCount;
 						if(currentColorPath.canva_start == (interation + 1) && objectlist[obj_id]->skeleton.colorPathCount <= color_t_count + 1) {
-							PAINT_ANSI256(currentColorPath.RGB);
+							// PAINT_ANSI256(currentColorPath.RGB);
 							for (int j = 0; j < currentColorPath.canva_end - currentColorPath.canva_start; j++) {
-								PrintToScreen(printed_count);
+								// PrintToScreen(printed_count);
 								printed_count++;
 								bufferIndex++;
 								interation++;
@@ -373,20 +412,18 @@ static void printColoredDisplay() {
 							color_t_count++;
 							continue;
 						}
-						/*
-							While we don't reach the start of the nest colorpath, continue printing the object with its standard color.
-						*/
-						PAINT_ANSI256(STANDARD_WHITE);
-						PrintToScreen(printed_count);
+						
+						// PAINT_ANSI256(STANDARD_WHITE);
+						// PrintToScreen(printed_count);
 						printed_count++;
 						interation++;
 					}
 				}
 			}
-			PAINT_ANSI256(STANDARD_WHITE);
+			// PAINT_ANSI256(STANDARD_WHITE);
 			continue;
 		}
-		PrintToScreen(printed_count);
+		// PrintToScreen(printed_count);
 		printed_count++;
 		bufferIndex++;
 	}

@@ -80,7 +80,8 @@ typedef struct ColorPathStrct {
     byte RGB;
     word canva_start;
     word canva_end;
-} colorPath_t;
+    word padding;
+}colorPath_t;
 typedef struct BaseObject {
     char* canva;
     word width;
@@ -104,6 +105,7 @@ extern object_t AppendRight(object_t obj1, object_t obj2, int pad);
 extern void Center(Object* object);
 extern void DestroyAll();
 extern int DestroyObject(struct SqrObject** object);
+extern int JoinColorPaths(object_t* obj1, object_t* obj2);
 extern char Key();
 extern void LoadCanvaFromFile(Object* object, const char* __PATH);
 extern struct SqrObject* NewObject(int width, int hight);
