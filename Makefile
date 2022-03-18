@@ -12,6 +12,9 @@ build_static: test_static
 
 lbuild: libcguieng.so libcguieng.a
 
+test_static_buffobj: test_buffobj.c libcguieng.a
+	gcc -g $^ -o $@
+
 test_static: test.c libcguieng.a
 	gcc -g $^ -o $@
 

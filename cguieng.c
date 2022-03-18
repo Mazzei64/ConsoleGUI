@@ -7,13 +7,16 @@ static void DefragmentCache(int cachedAt);
 static char* itoa(int __val, int base);
 static void printColoredDisplay();
 static void ZeroCachedObject(Object* object);
+
+static int JoinColorPaths(object_t* obj1, object_t* obj2);
 void DestroyAll();
 
 static Object** objectlist;
 static word objectlistCount = 0;
 static Object objectCache [MAX_OBJLIST_SIZE];
-static short objectCacheCount = 0;
-
+static word objectCacheCount = 0;
+static unsigned int* toColorList;
+static word toColorListCount = 0;
 char* displayBuffer;
 
 object_t AppendList(Object** objlist, const byte listlen) { //AppendGroup
@@ -201,7 +204,7 @@ Object* NewObject(int width, int hight) {
 	}
 	new_object->skeleton.width = width;
 	new_object->skeleton.hight = hight;
-	new_object->state.flags.modified_state = DISABLE;
+	new_object->state.flags.modified_state = ENABLE;
 	objectlist[objectlistCount] = new_object;
 	objectlistCount++;
 	new_object->id = objectlistCount;
@@ -212,7 +215,6 @@ int PaintObject(Object* object, byte RGB) {
 	if(object == NULL || RGB > 255 || RGB < 0 || COLOR_STATE == DISABLE) {
 		return 0;
 	}
-
 	colorPath_t clockColorPath;
     clockColorPath.canva_start = 1;
     clockColorPath.canva_end = object->skeleton.hight * object->skeleton.width;
@@ -225,10 +227,6 @@ int PaintObject(Object* object, byte RGB) {
 	return 1;
 }
 void SetObject(Object* object) {
-	printf("Adress in SetObject: %p\n", objectlist[11]->skeleton.colorPathList);
-	if(object->skeleton.width == objectlist[9]->skeleton.hight) {
-		printf("Same Object in SetObject.\n");
-	}
 	static byte begin = DISABLE;
 	if(displayBuffer == NULL) {
 		fprintf(stderr, "\nERROR: Display hasn't been created.\n");
@@ -237,8 +235,8 @@ void SetObject(Object* object) {
 		return;
 	}
 	if(begin == DISABLE) {
-		for (size_t i = 0; i < DISPLAY_BUFFER_LEN; i++) {
-			displayBuffer[i] = ' ';
+		for (size_t i = 0; i < SCREEN_SIZE; i++) {
+			displayBuffer[i] = STANDARD_BACKGROUND_CHAR;
 		}
 		begin = ENABLE;
 	}
@@ -271,11 +269,21 @@ void SetTerminalSTDINBlkSt(byte state) {
 }
 void UpdateDisplay() {
 	int i = 0;
-	// gotoxy(0,0);
+	gotoxy(0,0);
 	usleep(1000000 / REFRESH_RATE);
 	if(COLOR_STATE == ENABLE) {
-		printf("Adress before calling printColoredDisplay: %p\n", objectlist[11]->skeleton.colorPathList);
-		printColoredDisplay();
+		unsigned int colorPath;
+		while (i < SCREEN_SIZE) {
+			colorPath = toColorList[i];
+			if(colorPath & TAG_MASK == TAG_MASK) 
+				PAINT_ANSI256((colorPath & RGB_MASK) >> 16);
+			else if(colorPath == STANDARD_COLOR_MARK)
+				PAINT_ANSI256(STANDARD_WHITE);
+			PrintToScreen(i);
+			i++;
+		}
+		PAINT_ANSI256(STANDARD_WHITE);
+		return;
 	}
 	while (i < SCREEN_SIZE) {
 		PrintToScreen(i);
@@ -289,52 +297,49 @@ void UpdateDisplay() {
 static void AddToList(Object* object) {
 	objectlist[objectlistCount - 1] = object;
 }
-//UNTESTED
 static void BuffObj(Object* object) {
-	printf("Adress in BuffObj: %p\n", objectlist[11]->skeleton.colorPathList);
 	int objectIndex = 0;
-	if(COLOR_STATE == ENABLE) {
-		const unsigned int BLANK_TAG = (unsigned int)0x20202020;
-		int bufferlen_debug = DISPLAY_BUFFER_LEN;
-		int	start = object->state.posi_x + object->state.posi_y * WIDTH + sizeof(unsigned int), 
-			old_start = objectCache[object->state.cachedAt].state.posi_x + objectCache[object->state.cachedAt].state.posi_y * WIDTH + sizeof(unsigned int);
-
-		*(unsigned int*)(displayBuffer + old_start - sizeof(unsigned int)) = BLANK_TAG;
-
-		for (size_t i = 0; i < object->skeleton.hight; i++) {
-			for (size_t j = 0; j < object->skeleton.width + sizeof(unsigned short); j++) {
-				displayBuffer[old_start + j] = 0x20;
-			}
-			old_start += WIDTH;
-		}
-
-		*(unsigned int*)(displayBuffer + start - sizeof(unsigned int)) = (unsigned int)((object->id << 16) + COLOR_TAG_MASK);
-
-		for (size_t i = 0; i < object->skeleton.hight; i++) {
-			for (size_t j = 0; j < object->skeleton.width; j++) {
-				displayBuffer[start + j] = object->skeleton.canva[objectIndex];
-				objectIndex++;
-			}
-			// Wrong... new buffer is 5 times the area of the last one...
-			start += WIDTH;
-		}
-		objectCache[object->state.cachedAt].state.posi_x = object->state.posi_x;
-		objectCache[object->state.cachedAt].state.posi_y = object->state.posi_y;
-		objectCache[object->state.cachedAt].skeleton.hight = object->skeleton.hight;
-		objectCache[object->state.cachedAt].skeleton.width = object->skeleton.width;
-
-		return;
-	}
-	int	start = object->state.posi_x + object->state.posi_y * WIDTH,
+	int start = object->state.posi_x + object->state.posi_y * WIDTH,
 		old_start = objectCache[object->state.cachedAt].state.posi_x + objectCache[object->state.cachedAt].state.posi_y * WIDTH;
-	for (size_t i = 0; i < object->skeleton.hight; i++) {
-		for (size_t j = 0; j < object->skeleton.width + 2; j++) {
-			displayBuffer[old_start + j] = ' ';
+	if(COLOR_STATE == ENABLE && object->state.flags.colored == ENABLE) {
+		for (unsigned short i = 0; i< object->skeleton.colorPathCount; i++) {
+			const word obj_size = object->skeleton.width * object->skeleton.hight;
+			if(object->skeleton.colorPathList[i].canva_start > obj_size ||
+					object->skeleton.colorPathList[i].canva_end > obj_size) {
+						fprintf(stderr, "%sError:%s setting color path beyond the object\'s boundaries isn\'t allowed.\n",
+								STR_FORMAT_ANSI256(RED),STR_FORMAT_ANSI256(STANDARD_WHITE));
+						EXIT
+						return;
+					}
+			word start_offset_y = object->skeleton.colorPathList[i].canva_start / object->skeleton.width;
+			word start_offset_x;
+			if((start_offset_x = object->skeleton.colorPathList[i].canva_start % object->skeleton.width) == 0) {
+				start_offset_x += object->skeleton.width;
+				start_offset_y--;
+			}
+			int len = object->skeleton.colorPathList[i].canva_end - object->skeleton.colorPathList[i].canva_start + 1;
+
+			word index = (start_offset_y + object->state.posi_y) * WIDTH + (start_offset_x + object->state.posi_x);
+			unsigned int color_path = (object->skeleton.colorPathList[i].RGB << 24) + (object->skeleton.colorPathList[i].RGB << 16) + TAG_MASK;
+			for (size_t i = 0; i < len; i++) {
+				if ((index) % object->skeleton.width == 0) {
+					toColorList[index - 1] = color_path;
+					index = index - object->skeleton.width + WIDTH + 1;
+					continue;
+				}
+				toColorList[index - 1] = color_path;
+				index++;
+			}
+		}
+	}
+	for (word i = 0; i < object->skeleton.hight; i++) {
+		for (word j = 0; j < object->skeleton.width + 2; j++) {
+			displayBuffer[old_start + j] = STANDARD_BACKGROUND_CHAR;
 		}
 		old_start += WIDTH;
 	}
-	for (size_t i = 0; i < object->skeleton.hight; i++) {
-		for (size_t j = 0; j < object->skeleton.width; j++) {
+	for (word i = 0; i < object->skeleton.hight; i++) {
+		for (word j = 0; j < object->skeleton.width; j++) {
 			displayBuffer[start + j] = object->skeleton.canva[objectIndex];
 			objectIndex++;
 		}
@@ -369,64 +374,7 @@ static void DefragmentCache(int cachedAt) {
 	I think it would be best and more efficient if you created an encoded display buffer for reference the actual buffer... this isn't going well...
 */
 static void printColoredDisplay() {
-	int bufferIndex = sizeof(unsigned int),printed_count = 0;
-	unsigned short obj_id;
-	while(printed_count < SCREEN_SIZE) {
 	
-		if(*(unsigned int*)(displayBuffer + bufferIndex) & COLOR_TAG_MASK == COLOR_TAG_MASK) {
-			unsigned int debug = *(unsigned int*)(displayBuffer + bufferIndex);
-
-			obj_id = *(unsigned short*)(displayBuffer + bufferIndex + sizeof(unsigned short));
-			bufferIndex += sizeof(unsigned int);
-			
-			if(objectlistCount >= obj_id) {
-				obj_id -= 1;							
-				if(objectlist[obj_id]->state.flags.colored == ENABLE && objectlist[obj_id]->skeleton.colorPathCount != 0) {
-					
-				#define currentColorPath	objectlist[obj_id]->skeleton.colorPathList[color_t_count]
-					
-					
-					
-					unsigned short color_t_count = 0;
-					unsigned int interation = 0;
-					while(interation < (objectlist[obj_id]->skeleton.width * objectlist[obj_id]->skeleton.hight)) {
-						if(objectlist[obj_id]->skeleton.colorPathList != NULL) {
-							printf("path is not null\n");
-							printf("Decoded ID(obj_id): %d\n", obj_id);
-							printf("Objects ID by decoded ID: %d\n", objectlist[obj_id]->id);
-							printf("Objects Width by decoded ID: %d\n", objectlist[obj_id]->skeleton.width);
-							colorPath_t* colorPathAddrs = objectlist[obj_id]->skeleton.colorPathList;
-							printf("Color Path Address: %p\n", colorPathAddrs);
-							colorPath_t currentPath = *(objectlist[obj_id]->skeleton.colorPathList);
-						}
-						int debug = currentColorPath.canva_start;	// Segmentation fault
-						int debug_2 = objectlist[obj_id]->skeleton.colorPathCount;
-						if(currentColorPath.canva_start == (interation + 1) && objectlist[obj_id]->skeleton.colorPathCount <= color_t_count + 1) {
-							// PAINT_ANSI256(currentColorPath.RGB);
-							for (int j = 0; j < currentColorPath.canva_end - currentColorPath.canva_start; j++) {
-								// PrintToScreen(printed_count);
-								printed_count++;
-								bufferIndex++;
-								interation++;
-							}
-							color_t_count++;
-							continue;
-						}
-						
-						// PAINT_ANSI256(STANDARD_WHITE);
-						// PrintToScreen(printed_count);
-						printed_count++;
-						interation++;
-					}
-				}
-			}
-			// PAINT_ANSI256(STANDARD_WHITE);
-			continue;
-		}
-		// PrintToScreen(printed_count);
-		printed_count++;
-		bufferIndex++;
-	}
 }
 
 static void ZeroCachedObject(Object* object) {

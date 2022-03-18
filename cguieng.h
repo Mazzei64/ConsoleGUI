@@ -26,49 +26,10 @@
 static short width = 238;
 static short hight = 60;
 static short screen_size = 14280;
-static short displayBufferLen = 14280;
 static byte defaut_refresh_rate = 15;
 static byte running = 1;
 static byte colored_state = 0;
 extern char* displayBuffer;
-
-#define ENABLE 1
-#define DISABLE 0
-#define clrscr() printf("\e[1;1H\e[2J")
-#define gotoxy(x,y) printf("\033[%d;%dH", (y), (x))
-#define CURSOR_SWITCH printf("\e[?25l");
-#define PrintToScreen(displayBuffer_index)			printf("%c", displayBuffer[displayBuffer_index])
-#define COLOR_TAG_MASK 0x00002323 //"##\0\0" --> little endian.
-#define MAX_OBJLIST_SIZE 65535
-#define MAX_OBJSIZE 14280
-#define WIDTH width
-#define HIGHT hight
-#define SCREEN_SIZE screen_size
-#define DISPLAY_BUFFER_LEN displayBufferLen
-#define RUNNING running
-#define EXIT running = 0;
-#define COLOR_STATE colored_state
-#define REFRESH_RATE defaut_refresh_rate
-#define SET_REFRESH_RATE(a)     if(a<=0) {   \
-                            fprintf(stderr,"\nERROR: Invalid refresh rate value. Can't be equal or less than 0.\n");   \
-                            exit(EXIT_FAILURE);}                                   \
-                            defaut_refresh_rate = a;            \
-
-#define DISPLAY_ON   int main(int argc, char** argv) {     \
-                            CURSOR_SWITCH                      \
-                            SetTerminalSTDINBlkSt(ENABLE);
-
-#define __START             if(COLOR_STATE == ENABLE) DISPLAY_BUFFER_LEN = DISPLAY_BUFFER_LEN * (4 + 2);        \
-                            displayBuffer = (char*)calloc(DISPLAY_BUFFER_LEN, sizeof(char));      \
-                                while(RUNNING) {                  \
-                                 
-#define __END           if(RUNNING == DISABLE) continue;        \
-                        UpdateDisplay();            \
-                                              }           
-                                                  
-#define DISPLAY_OFF        DestroyAll();                \
-                       SetTerminalSTDINBlkSt(DISABLE);        \
-                        return 0;  }
 
 typedef struct FlagsField {
     byte cached : 1;
@@ -76,11 +37,10 @@ typedef struct FlagsField {
     byte colored: 1;
 } flags_t;
 typedef struct ColorPathStrct {
-    byte face;
-    byte RGB;
+    word face;
+    word RGB;
     word canva_start;
     word canva_end;
-    word padding;
 }colorPath_t;
 typedef struct BaseObject {
     char* canva;
@@ -100,12 +60,58 @@ typedef struct SqrObject {
     object_t skeleton;
     stobject_t state;
 } Object;
+#define DATACPY(a, b, c)        for(unsigned int i = 0; i < c; i++) {         \
+                                    a[i] = b;                                 \
+                                }
+#define ENABLE 1
+#define DISABLE 0
+#define clrscr() printf("\e[1;1H\e[2J")
+#define gotoxy(x,y) printf("\033[%d;%dH", (y), (x))
+#define CURSOR_SWITCH printf("\e[?25l");
+#define PrintToScreen(displayBuffer_index)			printf("%c", displayBuffer[displayBuffer_index])
+#define MAX_OBJLIST_SIZE 65535
+#define MAX_OBJSIZE 14280
+#define TAG_MASK 0x00002323
+#define RGB_MASK 0x00ff0000
+#define FACE_MASK 0xff000000
+#define STANDARD_COLOR_MARK 0x2e2e2e2e
+#define STANDARD_BACKGROUND_CHAR '#'
+#define WIDTH width
+#define HIGHT hight
+#define SCREEN_SIZE screen_size
+#define RUNNING running
+#define EXIT running = 0;
+#define COLOR_STATE colored_state
+#define REFRESH_RATE defaut_refresh_rate
+#define SET_REFRESH_RATE(a)     if(a<=0) {   \
+                            fprintf(stderr,"\nERROR: Invalid refresh rate value. Can't be equal or less than 0.\n");   \
+                            exit(EXIT_FAILURE);}                                   \
+                            defaut_refresh_rate = a;            \
+
+#define DISPLAY_ON   int main(int argc, char** argv) {          \
+                            CURSOR_SWITCH                       \
+                            SetTerminalSTDINBlkSt(ENABLE);
+
+#define __START             if(COLOR_STATE == ENABLE) {                                              \
+                                toColorList = (unsigned int*)malloc(sizeof(unsigned int) * SCREEN_SIZE);        \
+                                DATACPY(toColorList, STANDARD_COLOR_MARK, SCREEN_SIZE)                          \
+                            }                                                                        \
+                            displayBuffer = (char*)calloc(SCREEN_SIZE, sizeof(char));                \
+                                while(RUNNING) {                                                     \
+                                 
+#define __END           if(RUNNING == DISABLE) continue;        \
+                        UpdateDisplay();            \
+                                              }           
+                                                  
+#define DISPLAY_OFF        DestroyAll();                \
+                       SetTerminalSTDINBlkSt(DISABLE);        \
+                        return 0;  }
+
 extern object_t AppendList(Object** objectlist, byte listlen);
 extern object_t AppendRight(object_t obj1, object_t obj2, int pad);
 extern void Center(Object* object);
 extern void DestroyAll();
 extern int DestroyObject(struct SqrObject** object);
-extern int JoinColorPaths(object_t* obj1, object_t* obj2);
 extern char Key();
 extern void LoadCanvaFromFile(Object* object, const char* __PATH);
 extern struct SqrObject* NewObject(int width, int hight);
