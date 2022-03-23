@@ -319,16 +319,19 @@ static void BuffObj(Object* object) {
 			}
 			int len = object->skeleton.colorPathList[i].canva_end - object->skeleton.colorPathList[i].canva_start + 1;
 
+			word count = 0;
 			word index = (start_offset_y + object->state.posi_y) * WIDTH + (start_offset_x + object->state.posi_x);
 			unsigned int color_path = (object->skeleton.colorPathList[i].RGB << 24) + (object->skeleton.colorPathList[i].RGB << 16) + TAG_MASK;
 			for (size_t i = 0; i < len; i++) {
-				if ((index) % object->skeleton.width == 0) {
+				if (count + 1 == object->skeleton.width) {
 					toColorList[index - 1] = color_path;
 					index = index - object->skeleton.width + WIDTH + 1;
+					count = 0;
 					continue;
 				}
 				toColorList[index - 1] = color_path;
 				index++;
+				count++;
 			}
 		}
 	}
