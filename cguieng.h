@@ -27,6 +27,7 @@ static short width = 238;
 static short hight = 60;
 static short screen_size = 14280;
 static byte defaut_refresh_rate = 15;
+static byte cache = 1;
 static byte running = 1;
 static byte colored_state = 0;
 extern char* displayBuffer;
@@ -63,8 +64,6 @@ typedef struct SqrObject {
 #define DATACPY(a, b, c)        for(unsigned int i = 0; i < c; i++) {         \
                                     a[i] = b;                                 \
                                 }
-#define ENABLE 1
-#define DISABLE 0
 #define clrscr() printf("\e[1;1H\e[2J")
 #define gotoxy(x,y) printf("\033[%d;%dH", (y), (x))
 #define CURSOR_SWITCH printf("\e[?25l");
@@ -75,7 +74,7 @@ typedef struct SqrObject {
 #define RGB_MASK 0x00ff0000
 #define FACE_MASK 0xff000000
 #define STANDARD_COLOR_MARK 0x2e2e2e2e
-#define STANDARD_BACKGROUND_CHAR '#'
+#define STANDARD_BACKGROUND_CHAR ' '
 #define WIDTH width
 #define HIGHT hight
 #define SCREEN_SIZE screen_size
@@ -83,6 +82,13 @@ typedef struct SqrObject {
 #define EXIT running = 0;
 #define COLOR_STATE colored_state
 #define REFRESH_RATE defaut_refresh_rate
+/*
+    Optional Macros and Settings.
+*/
+#define ENABLE 1
+#define DISABLE 0
+#define CACHE_OFF cache = 0;
+#define CACHE cache
 #define SET_REFRESH_RATE(a)     if(a<=0) {   \
                             fprintf(stderr,"\nERROR: Invalid refresh rate value. Can't be equal or less than 0.\n");   \
                             exit(EXIT_FAILURE);}                                   \

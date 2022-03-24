@@ -240,18 +240,23 @@ void SetObject(Object* object) {
 		}
 		begin = ENABLE;
 	}
-	if(object->state.flags.cached == DISABLE) {
-		objectCache[objectCacheCount] = *object;
-		object->state.cachedAt = objectCacheCount;
-		objectCacheCount++;
-		object->state.flags.cached = ENABLE;
+	if(CACHE == ENABLE) {
+		if(object->state.flags.cached == DISABLE) {
+			objectCache[objectCacheCount] = *object;
+			object->state.cachedAt = objectCacheCount;
+			objectCacheCount++;
+			object->state.flags.cached = ENABLE;
+		}
+		if (object->state.flags.cached == ENABLE) {
+			if(object->state.flags.modified_state == ENABLE) {
+				BuffObj(object);
+				object->state.flags.modified_state = DISABLE;
+			}	
+		}
+		return;
 	}
-	if (object->state.flags.cached == ENABLE) {
-		if(object->state.flags.modified_state == ENABLE) {
-			BuffObj(object);
-			object->state.flags.modified_state = DISABLE;
-		}	
-	}
+	BuffObj(object);
+	object->state.flags.modified_state = DISABLE;
 }
 void SetTerminalSTDINBlkSt(byte state) {
 	struct termios ttystate;
