@@ -279,6 +279,7 @@ void UpdateDisplay() {
 	if(COLOR_STATE == ENABLE) {
 		unsigned int colorPath;
 		while (i < SCREEN_SIZE) {
+			PAINT_BACKGROUND
 			colorPath = toColorList[i];
 			if(colorPath & TAG_MASK == TAG_MASK) 
 				PAINT_ANSI256((colorPath & RGB_MASK) >> 16);
@@ -378,13 +379,6 @@ static void DefragmentCache(int cachedAt) {
 		objectCache[i].state.cachedAt -= 1;
 	}	
 }
-/*
-	I think it would be best and more efficient if you created an encoded display buffer for reference the actual buffer... this isn't going well...
-*/
-static void printColoredDisplay() {
-	
-}
-
 static void ZeroCachedObject(Object* object) {
 	object->id = 0;
 	object->skeleton.canva = NULL;

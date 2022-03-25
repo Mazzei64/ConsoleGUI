@@ -18,8 +18,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
-
 #include "colors.h"
+
 #define byte unsigned char
 #define word unsigned short
 ;
@@ -30,6 +30,7 @@ static byte defaut_refresh_rate = 15;
 static byte cache = 1;
 static byte running = 1;
 static byte colored_state = 0;
+static byte background_color = BLACK;
 extern char* displayBuffer;
 
 typedef struct FlagsField {
@@ -82,6 +83,7 @@ typedef struct SqrObject {
 #define EXIT running = 0;
 #define COLOR_STATE colored_state
 #define REFRESH_RATE defaut_refresh_rate
+#define PAINT_BACKGROUND    PAINT_BACKGROUND_ANSI256(background_color);
 /*
     Optional Macros and Settings.
 */
@@ -89,6 +91,8 @@ typedef struct SqrObject {
 #define DISABLE 0
 #define CACHE_OFF cache = 0;
 #define CACHE cache
+#define BACKGROUND_COLOR background_color
+#define SET_BACKGROUND_COLOR(a)     if(a<0 || a > 255)  background_color = BLACK; else background_color = a;
 #define SET_REFRESH_RATE(a)     if(a<=0) {   \
                             fprintf(stderr,"\nERROR: Invalid refresh rate value. Can't be equal or less than 0.\n");   \
                             exit(EXIT_FAILURE);}                                   \
